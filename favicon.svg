@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <rect width="32" height="32" rx="6" fill="#0d1117"/>
+  <!-- House body -->
+  <rect x="8" y="18" width="16" height="10" fill="#f59e0b"/>
+  <!-- Roof -->
+  <polygon points="16,6 26,18 6,18" fill="#f59e0b" opacity="0.85"/>
+  <!-- Door -->
+  <rect x="13" y="22" width="6" height="6" fill="#0d1117"/>
+  <!-- Solar panel hint on roof -->
+  <rect x="17" y="11" width="5" height="3" rx="0.5" fill="#0d1117" opacity="0.4"/>
+</svg>

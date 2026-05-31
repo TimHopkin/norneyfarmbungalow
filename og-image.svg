@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630">
+  <rect width="1200" height="630" fill="#0d1117"/>
+  <!-- Subtle grid lines -->
+  <line x1="0" y1="315" x2="1200" y2="315" stroke="#30363d" stroke-width="1"/>
+  <line x1="600" y1="0" x2="600" y2="630" stroke="#30363d" stroke-width="1"/>
+  <!-- House icon -->
+  <rect x="80" y="220" width="180" height="130" fill="#f59e0b" opacity="0.9"/>
+  <polygon points="170,100 290,220 50,220" fill="#f59e0b"/>
+  <rect x="120" y="280" width="60" height="70" fill="#0d1117" opacity="0.6"/>
+  <rect x="195" y="240" width="45" height="28" rx="3" fill="#0d1117" opacity="0.35"/>
+  <!-- Text -->
+  <text x="310" y="210" font-family="system-ui, -apple-system, sans-serif" font-size="72" font-weight="700" fill="#e6edf3" letter-spacing="-2">Norney Farm</text>
+  <text x="310" y="285" font-family="system-ui, -apple-system, sans-serif" font-size="72" font-weight="700" fill="#f59e0b" letter-spacing="-2">Bungalow</text>
+  <text x="312" y="350" font-family="system-ui, -apple-system, sans-serif" font-size="28" fill="#8b949e" letter-spacing="0">Off-grid · Connected · Open</text>
+  <!-- Principle tags -->
+  <rect x="312" y="390" width="180" height="38" rx="19" fill="rgba(245,158,11,0.15)" stroke="rgba(245,158,11,0.4)" stroke-width="1.5"/>
+  <text x="402" y="414" font-family="system-ui, sans-serif" font-size="18" fill="#f59e0b" text-anchor="middle">☀️ Off-grid</text>
+  <rect x="506" y="390" width="220" height="38" rx="19" fill="rgba(59,130,246,0.15)" stroke="rgba(59,130,246,0.4)" stroke-width="1.5"/>
+  <text x="616" y="414" font-family="system-ui, sans-serif" font-size="18" fill="#60a5fa" text-anchor="middle">🌐 Connected</text>
+  <rect x="740" y="390" width="190" height="38" rx="19" fill="rgba(167,139,250,0.15)" stroke="rgba(167,139,250,0.4)" stroke-width="1.5"/>
+  <text x="835" y="414" font-family="system-ui, sans-serif" font-size="18" fill="#a78bfa" text-anchor="middle">🔓 Open</text>
+  <!-- URL -->
+  <text x="312" y="560" font-family="system-ui, sans-serif" font-size="22" fill="#30363d">norneyfarmbungalow.netlify.app</text>
+</svg>
