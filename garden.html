@@ -1,0 +1,703 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Kitchen Garden · Norney Farm</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  <meta name="description" content="The Norney Farm kitchen garden — growing notes, varieties and seasonal advice for GU8, Surrey. A replicable model for productive no-dig growing." />
+  <meta property="og:title" content="Kitchen Garden · Norney Farm Bungalow" />
+  <meta property="og:description" content="Growing notes, varieties and seasonal advice from the Norney Farm kitchen garden, GU8 Surrey." />
+  <meta property="og:image" content="https://norneyfarmbungalow.netlify.app/og-image.png" />
+  <meta property="og:url" content="https://norneyfarmbungalow.netlify.app/garden" />
+  <meta property="og:type" content="website" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0d1117;
+      --surface: #161b22;
+      --surface2: #1f2937;
+      --border: #30363d;
+      --text: #e6edf3;
+      --muted: #8b949e;
+      --solar: #f59e0b;
+      --battery: #10b981;
+      --garden: #22c55e;
+      --garden-dim: rgba(34,197,94,0.12);
+      --garden-border: rgba(34,197,94,0.3);
+      --radius: 12px;
+
+      /* Category colours */
+      --brassicas: #a78bfa;
+      --roots: #fb923c;
+      --alliums: #f472b6;
+      --leafy: #34d399;
+      --legumes: #38bdf8;
+      --fruit: #f87171;
+      --squash: #fbbf24;
+      --herbs: #86efac;
+      --flowers: #e879f9;
+      --green-manures: #4ade80;
+    }
+
+    body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+    /* ── Nav ── */
+    nav {
+      position: sticky; top: 0; z-index: 100;
+      background: rgba(13,17,23,0.85); backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      padding: 0 2rem; display: flex; align-items: center; height: 60px; gap: 2rem;
+    }
+    .nav-brand { font-size: 0.95rem; font-weight: 600; color: var(--text); white-space: nowrap; display: flex; align-items: center; gap: 0.5rem; }
+    .nav-links { display: flex; gap: 0.25rem; list-style: none; }
+    .nav-links a {
+      display: block; padding: 0.4rem 0.9rem; border-radius: 6px;
+      font-size: 0.875rem; font-weight: 500; color: var(--muted);
+      text-decoration: none; transition: color 0.15s, background 0.15s;
+    }
+    .nav-links a:hover { color: var(--text); background: var(--surface2); }
+    .nav-links a.active { color: var(--garden); background: var(--garden-dim); }
+    .nav-links a.disabled { opacity: 0.4; pointer-events: none; }
+
+    /* ── Layout ── */
+    main { max-width: 1100px; margin: 0 auto; padding: 2.5rem 2rem 5rem; }
+
+    /* ── Hero ── */
+    .hero {
+      background: linear-gradient(135deg, var(--garden-dim) 0%, rgba(34,197,94,0.03) 100%);
+      border: 1px solid var(--garden-border);
+      border-radius: var(--radius); padding: 2rem 2.5rem;
+      margin-bottom: 1.5rem; display: flex; align-items: center; justify-content: space-between; gap: 2rem;
+    }
+    .hero-label { font-size: 0.75rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--garden); margin-bottom: 0.5rem; }
+    .hero h1 { font-size: 1.75rem; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 0.5rem; }
+    .hero p { color: var(--muted); font-size: 0.875rem; line-height: 1.65; max-width: 560px; }
+    .hero-icon { font-size: 4rem; opacity: 0.6; flex-shrink: 0; }
+
+    /* ── Now strip ── */
+    .now-strip {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 1.25rem 1.5rem;
+      margin-bottom: 1.5rem; display: flex; align-items: flex-start; gap: 1rem;
+    }
+    .now-label {
+      font-size: 0.7rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;
+      color: var(--garden); white-space: nowrap; padding-top: 0.1rem;
+    }
+    .now-tasks { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+    .now-task {
+      display: inline-flex; align-items: center; gap: 0.3rem;
+      padding: 0.25rem 0.65rem; border-radius: 20px; font-size: 0.78rem;
+      background: var(--surface2); border: 1px solid var(--border); color: var(--text);
+    }
+    .now-task-dot { width: 5px; height: 5px; border-radius: 50%; flex-shrink: 0; }
+
+    /* ── Category filters ── */
+    .filters {
+      display: flex; flex-wrap: wrap; gap: 0.4rem; margin-bottom: 1.5rem;
+    }
+    .filter-btn {
+      display: inline-flex; align-items: center; gap: 0.35rem;
+      padding: 0.35rem 0.8rem; border-radius: 20px; font-size: 0.78rem; font-weight: 600;
+      border: 1px solid var(--border); background: var(--surface); color: var(--muted);
+      cursor: pointer; transition: all 0.15s; font-family: inherit;
+    }
+    .filter-btn:hover { color: var(--text); border-color: #484f58; }
+    .filter-btn.active { border-color: currentColor; }
+    .filter-btn[data-cat="all"].active { color: var(--garden); background: var(--garden-dim); border-color: var(--garden-border); }
+    .filter-btn[data-cat="brassicas"].active { color: var(--brassicas); background: rgba(167,139,250,0.1); }
+    .filter-btn[data-cat="roots"].active { color: var(--roots); background: rgba(251,146,60,0.1); }
+    .filter-btn[data-cat="alliums"].active { color: var(--alliums); background: rgba(244,114,182,0.1); }
+    .filter-btn[data-cat="leafy"].active { color: var(--leafy); background: rgba(52,211,153,0.1); }
+    .filter-btn[data-cat="legumes"].active { color: var(--legumes); background: rgba(56,189,248,0.1); }
+    .filter-btn[data-cat="fruit"].active { color: var(--fruit); background: rgba(248,113,113,0.1); }
+    .filter-btn[data-cat="squash"].active { color: var(--squash); background: rgba(251,191,36,0.1); }
+    .filter-btn[data-cat="herbs"].active { color: var(--herbs); background: rgba(134,239,172,0.1); }
+    .filter-btn[data-cat="flowers"].active { color: var(--flowers); background: rgba(232,121,249,0.1); }
+    .filter-btn[data-cat="green-manures"].active { color: var(--green-manures); background: rgba(74,222,128,0.1); }
+
+    /* ── Crop grid ── */
+    .crop-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 1rem;
+    }
+
+    .crop-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 1.25rem;
+      transition: border-color 0.2s, transform 0.15s;
+      display: flex; flex-direction: column; gap: 0.75rem;
+    }
+    .crop-card:hover { border-color: #484f58; transform: translateY(-1px); }
+    .crop-card.hidden { display: none; }
+
+    .crop-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 0.5rem; }
+    .crop-icon { font-size: 1.5rem; line-height: 1; flex-shrink: 0; }
+    .crop-name { font-size: 1rem; font-weight: 700; letter-spacing: -0.01em; line-height: 1.2; }
+    .crop-cat-badge {
+      font-size: 0.65rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;
+      padding: 0.15rem 0.5rem; border-radius: 4px; white-space: nowrap; flex-shrink: 0;
+    }
+
+    .crop-notes { font-size: 0.83rem; line-height: 1.6; color: var(--muted); }
+
+    .crop-varieties { display: flex; flex-wrap: wrap; gap: 0.3rem; }
+    .variety-tag {
+      font-size: 0.7rem; font-weight: 500; padding: 0.15rem 0.45rem;
+      border-radius: 4px; background: var(--surface2); color: var(--muted);
+      border: 1px solid var(--border);
+    }
+
+    /* ── Sowing calendar bar ── */
+    .sow-bar { }
+    .sow-bar-label { font-size: 0.65rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); margin-bottom: 0.3rem; }
+    .sow-months { display: grid; grid-template-columns: repeat(12, 1fr); gap: 2px; }
+    .sow-month {
+      height: 10px; border-radius: 2px; background: var(--border);
+      position: relative;
+    }
+    .sow-month.indoor { background: rgba(251,191,36,0.5); }
+    .sow-month.outdoor { background: rgba(34,197,94,0.5); }
+    .sow-month.harvest { background: rgba(16,185,129,0.8); }
+    .sow-month.now-month { outline: 2px solid white; outline-offset: 1px; border-radius: 2px; }
+    .sow-legend { display: flex; gap: 0.75rem; margin-top: 0.4rem; }
+    .sow-legend-item { display: flex; align-items: center; gap: 0.3rem; font-size: 0.65rem; color: var(--muted); }
+    .sow-legend-dot { width: 8px; height: 8px; border-radius: 1px; flex-shrink: 0; }
+
+    /* ── Norney note ── */
+    .norney-note {
+      font-size: 0.78rem; color: var(--garden); font-style: italic;
+      padding: 0.5rem 0.75rem; border-left: 2px solid var(--garden-border);
+      background: var(--garden-dim); border-radius: 0 6px 6px 0;
+      line-height: 1.5;
+    }
+
+    /* ── Section heading ── */
+    .section-heading {
+      font-size: 0.7rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;
+      color: var(--muted); margin-bottom: 1rem; margin-top: 2rem;
+      display: flex; align-items: center; gap: 0.75rem;
+    }
+    .section-heading::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+    /* ── Responsive ── */
+    @media (max-width: 680px) {
+      nav { padding: 0 1rem; }
+      main { padding: 1.5rem 1rem 4rem; }
+      .hero { flex-direction: column; }
+      .hero-icon { display: none; }
+      .now-strip { flex-direction: column; gap: 0.5rem; }
+    }
+  </style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-brand">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>
+      <polyline points="9 22 9 12 15 12 15 22"/>
+    </svg>
+    Norney Farm Bungalow
+  </div>
+  <ul class="nav-links">
+    <li><a href="index.html">Home</a></li>
+    <li><a href="solar.html">Solar</a></li>
+    <li><a href="energy.html">Energy</a></li>
+    <li><a href="weather.html">Weather</a></li>
+    <li><a href="garden.html" class="active">Garden</a></li>
+    <li><a href="#" class="disabled">History</a></li>
+  </ul>
+</nav>
+
+<main>
+
+  <div class="hero">
+    <div>
+      <div class="hero-label">GU8 · Surrey · No-dig Kitchen Garden</div>
+      <h1>🌱 Norney Kitchen Garden</h1>
+      <p>
+        A productive no-dig kitchen garden in rural Surrey. These notes are written for GU8 conditions
+        — light sandy loam, cold air pockets in the lower field, last frost typically mid-April.
+        Everything here is replicable. Fork it for your own plot.
+      </p>
+    </div>
+    <div class="hero-icon">🪴</div>
+  </div>
+
+  <!-- What to do now -->
+  <div class="now-strip">
+    <div class="now-label">🗓️ Now</div>
+    <div class="now-tasks" id="nowTasks"></div>
+  </div>
+
+  <!-- Category filters -->
+  <div class="filters" id="filters">
+    <button class="filter-btn active" data-cat="all">All crops</button>
+    <button class="filter-btn" data-cat="brassicas">🥦 Brassicas</button>
+    <button class="filter-btn" data-cat="roots">🥕 Roots</button>
+    <button class="filter-btn" data-cat="alliums">🧅 Alliums</button>
+    <button class="filter-btn" data-cat="leafy">🥬 Leafy</button>
+    <button class="filter-btn" data-cat="legumes">🌿 Legumes</button>
+    <button class="filter-btn" data-cat="fruit">🍓 Fruit</button>
+    <button class="filter-btn" data-cat="squash">🎃 Squash</button>
+    <button class="filter-btn" data-cat="herbs">🌿 Herbs</button>
+    <button class="filter-btn" data-cat="flowers">🌸 Flowers</button>
+    <button class="filter-btn" data-cat="green-manures">🌾 Green Manures</button>
+  </div>
+
+  <!-- Crop grid -->
+  <div class="crop-grid" id="cropGrid"></div>
+
+</main>
+
+<script>
+const MONTH = new Date().getMonth(); // 0=Jan
+
+// Crop data
+// sowIn: months indoor sow (0-indexed)
+// sowOut: months outdoor sow
+// harvest: months harvest
+const CROPS = [
+  // BRASSICAS
+  {
+    name: 'Kale', cat: 'brassicas', icon: '🥦',
+    sowIn: [1,2], sowOut: [3,4,5], harvest: [8,9,10,11,0,1],
+    varieties: ['Cavolo Nero', 'Red Russian'],
+    notes: 'Sow successionally for winter harvest. Frost-hardy and highly nutritious — flavour improves after a frost.',
+    norney: 'One of the most reliable winter crops at Norney. Net early against cabbage whites.',
+  },
+  {
+    name: 'Broccoli (Calabrese)', cat: 'brassicas', icon: '🥦',
+    sowIn: [2,3], sowOut: [4,5], harvest: [7,8,9],
+    varieties: ['Marathon F1', 'Ironman F1'],
+    notes: 'Harvest central head promptly to encourage side shoots. Marathon or Ironman F1 are the most reliable varieties for the south east.',
+    norney: 'Net against cabbage white butterfly from day one. Worth the effort.',
+  },
+  {
+    name: 'Cabbage (Spring)', cat: 'brassicas', icon: '🥦',
+    sowIn: [], sowOut: [6,7], harvest: [2,3,4],
+    varieties: ['Pixie', 'Wheelers Imperial'],
+    notes: 'Sow July–August for overwintering. Hardy varieties overwinter well in GU8.',
+    norney: null,
+  },
+  {
+    name: 'Cauliflower', cat: 'brassicas', icon: '🥦',
+    sowIn: [1,2,3], sowOut: [4,5], harvest: [7,8,9,10],
+    varieties: ['All the Year Round', 'Romanesco'],
+    notes: 'Needs consistent moisture and fertile ground. Romanesco adds interest and is more forgiving.',
+    norney: null,
+  },
+  {
+    name: 'Turnips', cat: 'brassicas', icon: '🥦',
+    sowIn: [], sowOut: [2,3,4,5,6,7], harvest: [5,6,7,8,9,10],
+    varieties: ['Purple Top Milan'],
+    notes: 'Fast maturing catch crop. Harvest small — golf ball size — for the best flavour. Larger turnips become woody.',
+    norney: 'Useful as a quick gap filler between main crops.',
+  },
+
+  // ROOTS
+  {
+    name: 'Carrots', cat: 'roots', icon: '🥕',
+    sowIn: [], sowOut: [2,3,4,5,6], harvest: [6,7,8,9,10],
+    varieties: ['Nantes 2', 'Chantenay Red Cored'],
+    notes: 'Sow thinly in drills. Sandy loam at Norney suits them well — avoid freshly manured ground which causes forking.',
+    norney: 'The free-draining Norney soil is actually good for carrots. Sow early under fleece.',
+  },
+  {
+    name: 'Parsnips', cat: 'roots', icon: '🥕',
+    sowIn: [], sowOut: [2,3,4], harvest: [10,11,0,1],
+    varieties: ['Hollow Crown', 'Tender and True'],
+    notes: 'Sow fresh seed only — viability drops quickly. Sow radish alongside to mark rows. Frost genuinely improves sweetness.',
+    norney: null,
+  },
+  {
+    name: 'Potatoes (Early)', cat: 'roots', icon: '🥔',
+    sowIn: [], sowOut: [2,3], harvest: [5,6,7],
+    varieties: ['Charlotte', 'Rocket', 'Pentland Javelin'],
+    notes: 'Chit from January. Earth up as foliage emerges. Harvest when flowers open.',
+    norney: 'Watch for late frost — GU8 can get cold air pockets in late April.',
+  },
+  {
+    name: 'Radish', cat: 'roots', icon: '🥕',
+    sowIn: [], sowOut: [2,3,4,5,6,7,8,9], harvest: [3,4,5,6,7,8,9,10],
+    varieties: ['French Breakfast', 'Cherry Belle'],
+    notes: 'Fastest crop in the garden — 4 weeks from sow to harvest. Sow between slower crops as a row marker. Harvest promptly or becomes pithy and hollow.',
+    norney: 'Sow alongside parsnips to mark the slow-germinating row.',
+  },
+
+  // ALLIUMS
+  {
+    name: 'Garlic', cat: 'alliums', icon: '🧅',
+    sowIn: [], sowOut: [9,10], harvest: [5,6],
+    varieties: ['Solent Wight', 'Provence Wight'],
+    notes: 'Plant October–November for best results. Solent Wight softneck stores the longest. Harvest when half the leaves have yellowed — too late and it will have split.',
+    norney: 'Plant in autumn before the ground hardens. Very reliable at Norney.',
+  },
+  {
+    name: 'Leeks', cat: 'alliums', icon: '🧅',
+    sowIn: [1,2,3], sowOut: [], harvest: [9,10,11,0,1,2],
+    varieties: ['Autumn Giant', 'Musselburgh'],
+    notes: 'Dibber-plant into 15cm deep holes — drop the seedling in and water, don\'t backfill. Frost-hardy and very rewarding for winter harvests.',
+    norney: null,
+  },
+  {
+    name: 'Spring Onions', cat: 'alliums', icon: '🧅',
+    sowIn: [], sowOut: [2,3,4,5,6,7], harvest: [4,5,6,7,8,9],
+    varieties: ['White Lisbon'],
+    notes: 'Sow thinly — no thinning needed. White Lisbon is the classic choice. Succession sow every 3 weeks March–August for continuous supply.',
+    norney: null,
+  },
+
+  // LEAFY
+  {
+    name: 'Lettuce', cat: 'leafy', icon: '🥬',
+    sowIn: [1,2,3], sowOut: [3,4,5,6,7,8], harvest: [4,5,6,7,8,9,10],
+    varieties: ['Little Gem', 'Lollo Rosso', 'Butterhead'],
+    notes: 'Sow little and often for continuous supply. Avoid peak summer sowing — bolts in heat. Cut-and-come-again varieties most practical.',
+    norney: null,
+  },
+  {
+    name: 'Rocket', cat: 'leafy', icon: '🥬',
+    sowIn: [], sowOut: [2,3,4,7,8,9], harvest: [4,5,6,8,9,10,11],
+    varieties: ['Wild Rocket', 'Cultivated Rocket'],
+    notes: 'Best as a spring or autumn crop — bolts fast in summer heat. Wild rocket is slower to bolt and more peppery. Sow every 3 weeks.',
+    norney: 'Avoid May–June sowing. Much better in the cooler months.',
+  },
+  {
+    name: 'Spinach', cat: 'leafy', icon: '🥬',
+    sowIn: [1,2], sowOut: [2,3,7,8,9], harvest: [4,5,6,9,10,11],
+    varieties: ['Perpetual Spinach (Chard)', 'Medania'],
+    notes: 'True spinach bolts in heat. Sow early spring and again August for autumn. Perpetual spinach (chard) is more reliable in a hot summer and longer-cropping.',
+    norney: null,
+  },
+  {
+    name: 'Florence Fennel', cat: 'leafy', icon: '🥬',
+    sowIn: [4,5], sowOut: [5,6], harvest: [8,9,10],
+    varieties: ['Romanesco', 'Finale'],
+    notes: 'Bolt-resistant varieties essential. Do not sow before mid-May or cold will trigger bolting. Earth up the bulb as it swells.',
+    norney: null,
+  },
+
+  // LEGUMES
+  {
+    name: 'French Beans (Dwarf)', cat: 'legumes', icon: '🫘',
+    sowIn: [3,4], sowOut: [4,5,6], harvest: [7,8,9],
+    varieties: ['Purple Teepee', 'Safari'],
+    notes: 'Don\'t sow outdoors until after last frost — mid-May in GU8. Succession sow every 3 weeks for continuous harvest. Purple Teepee is a standout variety.',
+    norney: 'Last frost at Norney can be late April. Don\'t rush.',
+  },
+  {
+    name: 'Peas', cat: 'legumes', icon: '🫘',
+    sowIn: [0,1,2], sowOut: [3,4,5], harvest: [6,7,8],
+    varieties: ['Alderman', 'Kelvedon Wonder', 'Oregon Sugar Pod'],
+    notes: 'Sow in guttering indoors January–February for an early start outdoors. Alderman is tall and prolific; Kelvedon Wonder stays shorter. Succession sow through May.',
+    norney: null,
+  },
+
+  // FRUIT
+  {
+    name: 'Tomatoes', cat: 'fruit', icon: '🍅',
+    sowIn: [2,3], sowOut: [], harvest: [7,8,9],
+    varieties: ['Sungold', 'Gardeners Delight', 'Marmande'],
+    notes: 'Sow indoors Feb–March. Harden off carefully. Outdoors possible in a sheltered south-facing spot. Pinch out sideshoots on cordon types weekly.',
+    norney: 'Best against a warm south-facing wall or in a cold frame.',
+  },
+  {
+    name: 'Courgettes', cat: 'fruit', icon: '🥒',
+    sowIn: [3,4], sowOut: [4,5], harvest: [6,7,8,9],
+    varieties: ['Defender', 'Black Beauty', 'Sunstripe'],
+    notes: 'One or two plants is usually enough. Harvest frequently when finger-sized for best flavour — leave them and they become marrows.',
+    norney: 'Start indoors at Norney — don\'t plant out until after the last frost.',
+  },
+  {
+    name: 'Cucumbers', cat: 'fruit', icon: '🥒',
+    sowIn: [3,4], sowOut: [], harvest: [7,8,9],
+    varieties: ['Marketmore', 'Crystal Lemon'],
+    notes: 'Outdoors possible against a south-facing wall in warm summers. Marketmore is the best outdoor variety. Keep consistently watered.',
+    norney: 'Worth trying against the south-facing fence. Mulch well.',
+  },
+  {
+    name: 'Raspberries', cat: 'fruit', icon: '🫐',
+    sowIn: [], sowOut: [10,11], harvest: [6,7,8,9],
+    varieties: ['Glen Ample', 'Autumn Bliss'],
+    notes: 'Plant bare-root canes in autumn. Summer and autumn varieties give a very long season. Cut all canes to ground after planting first year.',
+    norney: 'Perennial — plant once and harvest for years.',
+  },
+  {
+    name: 'Strawberries', cat: 'fruit', icon: '🍓',
+    sowIn: [], sowOut: [7,8], harvest: [5,6,7],
+    varieties: ['Cambridge Favourite', 'Mara des Bois'],
+    notes: 'Plant runners in July–August for fruiting the following summer. Mara des Bois has exceptional flavour. Mulch with straw to keep fruit off soil.',
+    norney: null,
+  },
+  {
+    name: 'Gooseberries', cat: 'fruit', icon: '🍈',
+    sowIn: [], sowOut: [10,11], harvest: [5,6,7],
+    varieties: ['Invicta', 'Hinnonmäki Red'],
+    notes: 'Tough and reliable. Harvest some early for cooking (May) and leave the rest to ripen fully for eating. Very low maintenance once established.',
+    norney: null,
+  },
+  {
+    name: 'Asparagus', cat: 'fruit', icon: '🌱',
+    sowIn: [], sowOut: [3], harvest: [4,5],
+    varieties: ['Gijnlim', 'Jersey Knight'],
+    notes: 'Plant crowns not seed. Takes 2–3 years to establish before first harvest — worth every year of waiting. Do not harvest in year 1 or 2.',
+    norney: 'A long-term investment. Plant once in a permanent bed and don\'t disturb.',
+  },
+  {
+    name: 'Peppers & Chillies', cat: 'fruit', icon: '🌶️',
+    sowIn: [1,2,3], sowOut: [], harvest: [8,9,10],
+    varieties: ['Sweet Palermo', 'Cayenne', 'Padron'],
+    notes: 'Need heat — grow in a cold frame or polytunnel in GU8. Sow February with heat. Long growing season so start early.',
+    norney: 'Challenging outdoors in Surrey. Cold frame or south-facing wall essential.',
+  },
+
+  // SQUASH
+  {
+    name: 'Pumpkins', cat: 'squash', icon: '🎃',
+    sowIn: [3,4], sowOut: [4,5], harvest: [9,10],
+    varieties: ['Hundredweight', 'Jack Be Little', 'Crown Prince'],
+    notes: 'Train vines onto a compost heap — they love the heat and nutrients. Harvest when skin is tough enough to resist a fingernail and stalk is cork-dry.',
+    norney: 'Crown Prince stores beautifully through winter.',
+  },
+  {
+    name: 'Squash (Winter)', cat: 'squash', icon: '🎃',
+    sowIn: [3,4], sowOut: [4,5], harvest: [9,10],
+    varieties: ['Butternut', 'Uchiki Kuri', 'Crown Prince'],
+    notes: 'Give each plant at least 2m² of space. Cure harvested fruit in sun for 10 days to harden the skin and improve storage.',
+    norney: null,
+  },
+
+  // HERBS
+  {
+    name: 'Rosemary', cat: 'herbs', icon: '🌿',
+    sowIn: [], sowOut: [], harvest: [0,1,2,3,4,5,6,7,8,9,10,11],
+    varieties: ['Miss Jessopp\'s Upright', 'Tuscan Blue'],
+    notes: 'Perennial and evergreen — harvest year-round. Thrives in well-drained sunny spots. Virtually indestructible once established.',
+    norney: 'Plant in the sunniest, most free-draining spot. Pairs well with lavender.',
+  },
+  {
+    name: 'Parsley', cat: 'herbs', icon: '🌿',
+    sowIn: [2,3,4,5,6], sowOut: [3,4,5,6,7], harvest: [5,6,7,8,9,10,11],
+    varieties: ['Flat-leaf (French)', 'Moss Curled'],
+    notes: 'Slow to germinate — pour boiling water along the drill before sowing to speed it up. Flat-leaf has the better flavour.',
+    norney: null,
+  },
+  {
+    name: 'Borage', cat: 'herbs', icon: '🌸',
+    sowIn: [], sowOut: [3,4,5], harvest: [5,6,7,8,9],
+    varieties: ['Common Borage'],
+    notes: 'Intensely attractive to bees and hoverflies. Edible blue star flowers. Self-seeds so prolifically that you\'ll never need to sow it again after year one.',
+    norney: 'A Norney essential. Plant once and it takes care of itself.',
+  },
+  {
+    name: 'Coriander', cat: 'herbs', icon: '🌿',
+    sowIn: [], sowOut: [3,4,5,8,9], harvest: [5,6,7,9,10,11],
+    varieties: ['Cilantro', 'Leisure'],
+    notes: 'Bolts fast in heat — sow in situ, do not transplant. Cilantro and Leisure varieties are most bolt-resistant. Succession sow for continuous supply.',
+    norney: 'Spring and autumn sowings only at Norney — summer heat triggers immediate bolting.',
+  },
+  {
+    name: 'Dill', cat: 'herbs', icon: '🌿',
+    sowIn: [], sowOut: [3,4,5,6,7], harvest: [5,6,7,8,9],
+    varieties: ['Mammoth'],
+    notes: 'Sow in situ — taproot means it doesn\'t transplant well. Keep away from fennel as they will cross-pollinate and you\'ll lose the distinct flavours of both.',
+    norney: null,
+  },
+
+  // FLOWERS
+  {
+    name: 'Sweet Peas', cat: 'flowers', icon: '🌸',
+    sowIn: [0,1,9,10], sowOut: [2,3], harvest: [5,6,7,8],
+    varieties: ['Spencer Mix', 'Matucana', 'Painted Lady'],
+    notes: 'Sow October for overwintering under cold glass, or January–February indoors with gentle heat. Pinch out growing tips at 10cm for bushy plants. Pick daily to prolong flowering.',
+    norney: 'Autumn sowing gives the strongest plants at Norney.',
+  },
+  {
+    name: 'Foxglove', cat: 'flowers', icon: '🌸',
+    sowIn: [4,5,6], sowOut: [5,6,7], harvest: [5,6,7],
+    varieties: ['Digitalis purpurea', 'Camelot Cream'],
+    notes: 'Biennial — sow year one to flower year two. Self-seeds prolifically once established so rarely needs resowing. Pollinators adore them.',
+    norney: 'Perfect for Norney — naturalistic, low-effort, and spectacular in a dappled spot.',
+  },
+  {
+    name: 'Cosmos', cat: 'flowers', icon: '🌸',
+    sowIn: [2,3,4], sowOut: [4,5], harvest: [7,8,9,10],
+    varieties: ['Sensation Mix', 'Purity (white)', 'Double Click'],
+    notes: 'Very long-flowering from July to first frost. Deadhead regularly to keep going. Sow indoors March–April for earliest flowers.',
+    norney: null,
+  },
+  {
+    name: 'Cornflower', cat: 'flowers', icon: '🌸',
+    sowIn: [], sowOut: [8,9,2,3], harvest: [5,6,7,8,9],
+    varieties: ['Blue Boy', 'Classic Magic Mix'],
+    notes: 'Direct sow in autumn or spring — autumn-sown plants flower earlier and more robustly. Pollinators love them. Leave to self-seed for repeat years with zero effort.',
+    norney: null,
+  },
+  {
+    name: 'Sunflowers', cat: 'flowers', icon: '🌻',
+    sowIn: [3,4], sowOut: [4,5], harvest: [7,8,9],
+    varieties: ['Russian Giant', 'Velvet Queen', 'Lemon Queen'],
+    notes: 'Sow deep in individual pots — tap root resents disturbance. Stake in exposed positions. Lemon Queen is multi-branching and produces many flowers.',
+    norney: null,
+  },
+
+  // GREEN MANURES
+  {
+    name: 'Buckwheat', cat: 'green-manures', icon: '🌾',
+    sowIn: [], sowOut: [4,5,6,7,8], harvest: [],
+    varieties: ['Common Buckwheat'],
+    notes: 'Excellent at suppressing weeds and mobilising phosphorus from the soil. White flowers attract hoverflies and pollinators in abundance. Dig in before it sets seed.',
+    norney: 'Ideal for the gaps between main crops in summer.',
+  },
+  {
+    name: 'Red Clover', cat: 'green-manures', icon: '🌾',
+    sowIn: [], sowOut: [3,4,5,8,9], harvest: [],
+    varieties: ['Medium Red Clover'],
+    notes: 'Nitrogen-fixing — bacteria on the roots convert atmospheric N to plant-available form. All crops benefit from a bed previously under clover. Dig in before flowering.',
+    norney: null,
+  },
+  {
+    name: 'White Clover', cat: 'green-manures', icon: '🌾',
+    sowIn: [], sowOut: [3,4,5,8,9], harvest: [],
+    varieties: ['Dwarf White'],
+    notes: 'Lower-growing than red clover. Precedes hungry crops like brassicas. Can be left as a living mulch between brassica transplants.',
+    norney: null,
+  },
+  {
+    name: 'Winter Rye', cat: 'green-manures', icon: '🌾',
+    sowIn: [], sowOut: [8,9,10], harvest: [],
+    varieties: ['Secale cereale'],
+    notes: 'Excellent winter cover for empty beds. Deep roots help break up clay subsoil. Dig or cut in March before it flowers — leaving it longer makes incorporation harder.',
+    norney: 'Very useful at Norney for keeping bare beds covered over winter. Prevents nutrient leaching.',
+  },
+  {
+    name: 'Winter Vetch', cat: 'green-manures', icon: '🌾',
+    sowIn: [], sowOut: [8,9,10], harvest: [],
+    varieties: ['Hairy Vetch'],
+    notes: 'Often mixed with winter rye for combined weed suppression and nitrogen fixation. The combination is more effective than either alone.',
+    norney: 'Mix 50:50 with winter rye for the best winter cover at Norney.',
+  },
+];
+
+// What to do now — month-indexed tasks
+const NOW_TASKS = {
+  0:  [{text:'Sow peas indoors in guttering', color:'var(--legumes)'},{text:'Chit potatoes', color:'var(--roots)'},{text:'Order seeds', color:'var(--garden)'},{text:'Plan rotation', color:'var(--garden)'}],
+  1:  [{text:'Sow tomatoes & peppers with heat', color:'var(--fruit)'},{text:'Sow leeks indoors', color:'var(--alliums)'},{text:'Sow early lettuce indoors', color:'var(--leafy)'}],
+  2:  [{text:'Sow brassicas indoors', color:'var(--brassicas)'},{text:'Sow first carrots (fleece)', color:'var(--roots)'},{text:'Plant onion sets', color:'var(--alliums)'},{text:'Sow peas outdoors', color:'var(--legumes)'}],
+  3:  [{text:'Sow courgettes & squash indoors', color:'var(--squash)'},{text:'Sow French beans indoors', color:'var(--legumes)'},{text:'Plant asparagus crowns', color:'var(--fruit)'},{text:'Sow herbs outdoors', color:'var(--herbs)'}],
+  4:  [{text:'Plant out brassicas (after frost)', color:'var(--brassicas)'},{text:'Direct sow beans & courgettes', color:'var(--legumes)'},{text:'Sow squash outdoors', color:'var(--squash)'},{text:'Sow succession lettuce', color:'var(--leafy)'}],
+  5:  [{text:'Sow French beans in succession', color:'var(--legumes)'},{text:'Plant out tomatoes (warm spot)', color:'var(--fruit)'},{text:'Sow autumn coriander', color:'var(--herbs)'},{text:'Earth up potatoes', color:'var(--roots)'}],
+  6:  [{text:'Harvest garlic when half leaves yellow', color:'var(--alliums)'},{text:'Sow winter brassicas', color:'var(--brassicas)'},{text:'Sow spring cabbages', color:'var(--brassicas)'},{text:'Sow green manures on cleared beds', color:'var(--green-manures)'}],
+  7:  [{text:'Harvest & store summer veg', color:'var(--garden)'},{text:'Plant strawberry runners', color:'var(--fruit)'},{text:'Sow autumn spinach & rocket', color:'var(--leafy)'},{text:'Sow green manures', color:'var(--green-manures)'}],
+  8:  [{text:'Harvest squash when stalks dry', color:'var(--squash)'},{text:'Sow winter rye & vetch', color:'var(--green-manures)'},{text:'Plant out spring cabbages', color:'var(--brassicas)'},{text:'Harvest and store potatoes', color:'var(--roots)'}],
+  9:  [{text:'Plant garlic (Solent Wight)', color:'var(--alliums)'},{text:'Sow winter rye on empty beds', color:'var(--green-manures)'},{text:'Sow sweet peas for overwintering', color:'var(--flowers)'},{text:'Clear and compost spent crops', color:'var(--garden)'}],
+  10: [{text:'Plant bare-root raspberries & gooseberries', color:'var(--fruit)'},{text:'Plant garlic (last chance)', color:'var(--alliums)'},{text:'Take stock of seed stock', color:'var(--garden)'}],
+  11: [{text:'Plan next year\'s rotation', color:'var(--garden)'},{text:'Order seeds for next season', color:'var(--garden)'},{text:'Mulch empty beds with compost', color:'var(--garden)'}],
+};
+
+// Category colours
+const CAT_COLOR = {
+  brassicas: 'var(--brassicas)', roots: 'var(--roots)', alliums: 'var(--alliums)',
+  leafy: 'var(--leafy)', legumes: 'var(--legumes)', fruit: 'var(--fruit)',
+  squash: 'var(--squash)', herbs: 'var(--herbs)', flowers: 'var(--flowers)',
+  'green-manures': 'var(--green-manures)',
+};
+const CAT_LABEL = {
+  brassicas:'Brassicas', roots:'Roots', alliums:'Alliums', leafy:'Leafy',
+  legumes:'Legumes', fruit:'Fruit', squash:'Squash', herbs:'Herbs',
+  flowers:'Flowers', 'green-manures':'Green Manures',
+};
+const MONTH_LABELS = ['J','F','M','A','M','J','J','A','S','O','N','D'];
+
+// Render "What to do now"
+function renderNow() {
+  const tasks = NOW_TASKS[MONTH] || [];
+  const el = document.getElementById('nowTasks');
+  el.innerHTML = tasks.map(t => `
+    <span class="now-task">
+      <span class="now-task-dot" style="background:${t.color}"></span>
+      ${t.text}
+    </span>`).join('');
+}
+
+// Build sowing bar HTML
+function sowBar(crop) {
+  const months = MONTH_LABELS.map((m, i) => {
+    let cls = 'sow-month';
+    if (crop.harvest?.includes(i)) cls += ' harvest';
+    else if (crop.sowOut?.includes(i)) cls += ' outdoor';
+    else if (crop.sowIn?.includes(i)) cls += ' indoor';
+    if (i === MONTH) cls += ' now-month';
+    return `<div class="${cls}" title="${m}"></div>`;
+  }).join('');
+
+  const hasIndoor  = crop.sowIn?.length > 0;
+  const hasOutdoor = crop.sowOut?.length > 0;
+  const hasHarvest = crop.harvest?.length > 0;
+
+  const legend = [
+    hasIndoor  ? `<span class="sow-legend-item"><span class="sow-legend-dot" style="background:rgba(251,191,36,0.5)"></span>Sow indoors</span>` : '',
+    hasOutdoor ? `<span class="sow-legend-item"><span class="sow-legend-dot" style="background:rgba(34,197,94,0.5)"></span>Sow outdoors</span>` : '',
+    hasHarvest ? `<span class="sow-legend-item"><span class="sow-legend-dot" style="background:rgba(16,185,129,0.8)"></span>Harvest</span>` : '',
+  ].filter(Boolean).join('');
+
+  return `
+    <div class="sow-bar">
+      <div class="sow-bar-label">J · F · M · A · M · J · J · A · S · O · N · D</div>
+      <div class="sow-months">${months}</div>
+      ${legend ? `<div class="sow-legend">${legend}</div>` : ''}
+    </div>`;
+}
+
+// Render crop cards
+function renderCrops(filter = 'all') {
+  const grid = document.getElementById('cropGrid');
+  grid.innerHTML = CROPS.map(crop => {
+    const hidden = filter !== 'all' && crop.cat !== filter ? 'hidden' : '';
+    const catColor = CAT_COLOR[crop.cat];
+    const varieties = crop.varieties.map(v => `<span class="variety-tag">${v}</span>`).join('');
+    const norney = crop.norney ? `<div class="norney-note">📍 ${crop.norney}</div>` : '';
+
+    return `
+      <div class="crop-card ${hidden}" data-cat="${crop.cat}">
+        <div class="crop-header">
+          <div style="display:flex;align-items:center;gap:0.5rem">
+            <span class="crop-icon">${crop.icon}</span>
+            <div class="crop-name">${crop.name}</div>
+          </div>
+          <span class="crop-cat-badge" style="color:${catColor};background:color-mix(in srgb,${catColor} 12%,transparent);border:1px solid color-mix(in srgb,${catColor} 30%,transparent)">
+            ${CAT_LABEL[crop.cat]}
+          </span>
+        </div>
+        ${sowBar(crop)}
+        <p class="crop-notes">${crop.notes}</p>
+        ${crop.varieties.length ? `<div class="crop-varieties">${varieties}</div>` : ''}
+        ${norney}
+      </div>`;
+  }).join('');
+}
+
+// Filter buttons
+document.getElementById('filters').addEventListener('click', e => {
+  const btn = e.target.closest('.filter-btn');
+  if (!btn) return;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderCrops(btn.dataset.cat);
+});
+
+// Init
+renderNow();
+renderCrops();
+</script>
+</body>
+</html>
