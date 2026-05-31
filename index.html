@@ -336,6 +336,51 @@
       font-style: normal;
     }
 
+    /* ── Live strip ── */
+    .live-strip {
+      display: flex;
+      align-items: center;
+      gap: 0;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      margin-bottom: 2rem;
+      overflow: hidden;
+    }
+
+    .live-stat {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 1rem 1.5rem;
+      flex: 1;
+    }
+
+    .live-stat-icon { font-size: 1.5rem; line-height: 1; }
+
+    .live-stat-label {
+      font-size: 0.7rem;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 0.2rem;
+    }
+
+    .live-stat-value {
+      font-size: 1.4rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      line-height: 1;
+    }
+
+    .live-divider {
+      width: 1px;
+      height: 40px;
+      background: var(--border);
+      flex-shrink: 0;
+    }
+
     /* ── Responsive ── */
     @media (max-width: 680px) {
       nav { padding: 0 1rem; }
@@ -378,6 +423,33 @@
       <span class="principle-tag pt-connect">🌐 Connected intelligence</span>
 <span class="principle-tag pt-learn">🧠 Living learning environment</span>
       <span class="principle-tag pt-open">🔓 Open Norney</span>
+    </div>
+  </div>
+
+  <!-- Live snapshot -->
+  <div class="live-strip" id="liveStrip">
+    <div class="live-stat" id="liveSolar">
+      <div class="live-stat-icon">☀️</div>
+      <div class="live-stat-body">
+        <div class="live-stat-label">Solar now</div>
+        <div class="live-stat-value" id="lsSolar">—</div>
+      </div>
+    </div>
+    <div class="live-divider"></div>
+    <div class="live-stat" id="liveBattery">
+      <div class="live-stat-icon">🔋</div>
+      <div class="live-stat-body">
+        <div class="live-stat-label">Battery</div>
+        <div class="live-stat-value" id="lsBattery">—</div>
+      </div>
+    </div>
+    <div class="live-divider"></div>
+    <div class="live-stat">
+      <div class="live-stat-icon" id="lsWeatherIcon">🌤️</div>
+      <div class="live-stat-body">
+        <div class="live-stat-label">Weather now</div>
+        <div class="live-stat-value" id="lsWeather">—</div>
+      </div>
     </div>
   </div>
 
@@ -540,6 +612,45 @@
 </main>
 
 <script>
+  // ── Live snapshot fetch ──────────────────────────────────────────────────
+  const SITE_ID_HOME = 948642;
+  const LAT = 51.175, LON = -0.617;
+
+  const WMO_ICON = { 0:'☀️',1:'🌤️',2:'⛅',3:'☁️',45:'🌫️',48:'🌫️',51:'🌦️',53:'🌦️',55:'🌧️',61:'🌧️',63:'🌧️',65:'🌧️',71:'🌨️',73:'🌨️',75:'🌨️',80:'🌦️',81:'🌧️',82:'⛈️',95:'⛈️',96:'⛈️',99:'⛈️' };
+
+  async function loadLiveSnapshot() {
+    // Solar + battery
+    try {
+      const [solarR, diagR] = await Promise.all([
+        fetch(`/api/installations/${SITE_ID_HOME}/widgets/SolarChargerSummary`).then(r => r.json()),
+        fetch(`/api/installations/${SITE_ID_HOME}/diagnostics?count=100`).then(r => r.json()),
+      ]);
+      const pvW = parseFloat(solarR.records?.data?.['107']?.rawValue || 0);
+      let soc = null;
+      (diagR.records || []).forEach(r => { if (r.code === 'SOC' && r.Device === 'Battery Monitor') soc = parseFloat(r.rawValue); });
+
+      document.getElementById('lsSolar').textContent = pvW >= 1000 ? `${(pvW/1000).toFixed(2)} kW` : `${Math.round(pvW)} W`;
+      document.getElementById('lsSolar').style.color = pvW > 100 ? 'var(--solar)' : 'var(--muted)';
+      if (soc !== null) {
+        document.getElementById('lsBattery').textContent = `${Math.round(soc)}%`;
+        document.getElementById('lsBattery').style.color = soc > 50 ? 'var(--battery)' : soc > 20 ? 'var(--solar)' : '#ef4444';
+      }
+    } catch(e) { console.warn('Live solar fetch failed', e); }
+
+    // Weather
+    try {
+      const wx = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${LAT}&longitude=${LON}&current=temperature_2m,weather_code&timezone=Europe%2FLondon`).then(r => r.json());
+      const temp = wx.current.temperature_2m;
+      const code = wx.current.weather_code;
+      document.getElementById('lsWeatherIcon').textContent = WMO_ICON[code] || '🌡️';
+      document.getElementById('lsWeather').textContent = `${Math.round(temp)}°C`;
+      document.getElementById('lsWeather').style.color = 'var(--text)';
+    } catch(e) { console.warn('Weather fetch failed', e); }
+  }
+
+  loadLiveSnapshot();
+  setInterval(loadLiveSnapshot, 60_000);
+
   // Define British National Grid (EPSG:27700) projection
   proj4.defs('EPSG:27700', '+proj=tmerc +lat_0=49 +lon_0=-2 +k=0.9996012717 +x_0=400000 +y_0=-100000 +ellps=airy +datum=OSGB36 +units=m +no_defs');
 
