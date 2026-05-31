@@ -1,0 +1,681 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Open Norney · AI Blog</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  <meta name="description" content="10 machine-readable guides on replicating the Norney Farm off-grid, connected home model. Paste the URL into any LLM for personalised advice." />
+  <meta property="og:title" content="Open Norney · AI Blog" />
+  <meta property="og:description" content="10 guides on solar, no-dig growing, home dashboards and off-grid living — designed to be fed into an LLM for personalised advice." />
+  <meta property="og:image" content="https://norneyfarmbungalow.netlify.app/og-image.png" />
+  <meta property="og:url" content="https://norneyfarmbungalow.netlify.app/blog" />
+  <meta property="og:type" content="website" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #0d1117; --surface: #161b22; --surface2: #1f2937; --border: #30363d;
+      --text: #e6edf3; --muted: #8b949e; --solar: #f59e0b; --battery: #10b981;
+      --garden: #22c55e; --load: #a78bfa; --grid: #3b82f6;
+      --blog: #a78bfa; --blog-dim: rgba(167,139,250,0.12); --blog-border: rgba(167,139,250,0.3);
+      --radius: 12px;
+    }
+    body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+    /* Nav */
+    nav {
+      position: sticky; top: 0; z-index: 100;
+      background: rgba(13,17,23,0.85); backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      padding: 0 2rem; display: flex; align-items: center; height: 60px; gap: 2rem;
+    }
+    .nav-brand { font-size: 0.95rem; font-weight: 600; color: var(--text); display: flex; align-items: center; gap: 0.5rem; }
+    .nav-links { display: flex; gap: 0.25rem; list-style: none; }
+    .nav-links a {
+      display: block; padding: 0.4rem 0.9rem; border-radius: 6px;
+      font-size: 0.875rem; font-weight: 500; color: var(--muted);
+      text-decoration: none; transition: color 0.15s, background 0.15s;
+    }
+    .nav-links a:hover { color: var(--text); background: var(--surface2); }
+    .nav-links a.active { color: var(--blog); background: var(--blog-dim); }
+    .nav-links a.disabled { opacity: 0.4; pointer-events: none; }
+
+    /* Layout */
+    main { max-width: 860px; margin: 0 auto; padding: 2.5rem 2rem 5rem; }
+
+    /* Hero */
+    .hero {
+      background: linear-gradient(135deg, var(--blog-dim) 0%, rgba(167,139,250,0.03) 100%);
+      border: 1px solid var(--blog-border); border-radius: var(--radius);
+      padding: 2rem 2.5rem; margin-bottom: 1.5rem;
+    }
+    .hero-label { font-size: 0.7rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--blog); margin-bottom: 0.75rem; }
+    .hero h1 { font-size: 1.75rem; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 0.75rem; }
+    .hero p { color: var(--muted); font-size: 0.9rem; line-height: 1.7; margin-bottom: 1.25rem; }
+
+    /* URL copy strip */
+    .url-strip {
+      background: var(--bg); border: 1px solid var(--blog-border);
+      border-radius: 8px; padding: 0.75rem 1rem;
+      display: flex; align-items: center; gap: 0.75rem;
+    }
+    .url-strip-label { font-size: 0.7rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--blog); white-space: nowrap; }
+    .url-strip-url { font-size: 0.83rem; color: var(--muted); font-family: monospace; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .copy-btn {
+      font-size: 0.75rem; font-weight: 600; padding: 0.3rem 0.75rem;
+      border-radius: 6px; border: 1px solid var(--blog-border); background: var(--blog-dim);
+      color: var(--blog); cursor: pointer; white-space: nowrap; transition: all 0.15s; font-family: inherit;
+    }
+    .copy-btn:hover { background: rgba(167,139,250,0.2); }
+
+    /* Prompt examples */
+    .prompt-strip {
+      background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+      padding: 1.25rem 1.5rem; margin-bottom: 2rem;
+    }
+    .prompt-strip-label { font-size: 0.7rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); margin-bottom: 0.75rem; }
+    .prompts { display: flex; flex-direction: column; gap: 0.4rem; }
+    .prompt-eg {
+      font-size: 0.8rem; color: var(--muted); font-style: italic; padding: 0.4rem 0.75rem;
+      border-left: 2px solid var(--border); line-height: 1.5;
+    }
+    .prompt-eg strong { color: var(--text); font-style: normal; }
+
+    /* Post index */
+    .post-index {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 1.25rem 1.5rem; margin-bottom: 2.5rem;
+    }
+    .post-index-label { font-size: 0.7rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); margin-bottom: 0.75rem; }
+    .post-index ol { padding-left: 1.25rem; display: flex; flex-direction: column; gap: 0.35rem; }
+    .post-index li { font-size: 0.875rem; }
+    .post-index a { color: var(--muted); text-decoration: none; transition: color 0.15s; }
+    .post-index a:hover { color: var(--text); }
+
+    /* Blog posts */
+    .post {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 2rem; margin-bottom: 1.5rem;
+      scroll-margin-top: 80px;
+    }
+    .post-number { font-size: 0.65rem; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); margin-bottom: 0.5rem; }
+    .post h2 { font-size: 1.2rem; font-weight: 700; letter-spacing: -0.01em; margin-bottom: 0.5rem; line-height: 1.3; }
+    .post-meta { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1.25rem; }
+    .post-tag {
+      font-size: 0.7rem; font-weight: 600; padding: 0.15rem 0.5rem;
+      border-radius: 4px; border: 1px solid var(--border); color: var(--muted);
+    }
+    .post-body { font-size: 0.875rem; line-height: 1.75; color: var(--muted); }
+    .post-body p { margin-bottom: 1rem; }
+    .post-body h3 { font-size: 0.8rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text); margin: 1.25rem 0 0.5rem; }
+    .post-body ul, .post-body ol { padding-left: 1.25rem; margin-bottom: 1rem; display: flex; flex-direction: column; gap: 0.35rem; }
+    .post-body li { color: var(--muted); }
+    .post-body strong { color: var(--text); font-weight: 600; }
+    .post-body a { color: var(--grid); text-decoration: none; }
+    .post-body a:hover { text-decoration: underline; }
+    .post-body code {
+      font-family: monospace; font-size: 0.82rem;
+      background: var(--surface2); padding: 0.1rem 0.35rem;
+      border-radius: 3px; color: var(--solar);
+    }
+
+    /* Callout boxes */
+    .callout {
+      border-radius: 8px; padding: 0.85rem 1rem; margin: 1rem 0; font-size: 0.83rem; line-height: 1.6;
+    }
+    .callout-cost { background: rgba(16,185,129,0.08); border: 1px solid rgba(16,185,129,0.2); color: var(--battery); }
+    .callout-tip  { background: rgba(245,158,11,0.08); border: 1px solid rgba(245,158,11,0.2); color: var(--solar); }
+    .callout-refs { background: rgba(59,130,246,0.08); border: 1px solid rgba(59,130,246,0.2); color: #60a5fa; }
+    .callout-prompt { background: var(--blog-dim); border: 1px solid var(--blog-border); color: var(--blog); }
+    .callout strong { font-weight: 700; }
+    .callout a { color: inherit; }
+
+    /* Responsive */
+    @media (max-width: 640px) { nav { padding: 0 1rem; } main { padding: 1.5rem 1rem 4rem; } .hero { padding: 1.5rem; } }
+  </style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-brand">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>
+      <polyline points="9 22 9 12 15 12 15 22"/>
+    </svg>
+    Norney Farm Bungalow
+  </div>
+  <ul class="nav-links">
+    <li><a href="index.html">Home</a></li>
+    <li><a href="solar.html">Solar</a></li>
+    <li><a href="energy.html">Energy</a></li>
+    <li><a href="weather.html">Weather</a></li>
+    <li><a href="garden.html">Garden</a></li>
+    <li><a href="blog.html" class="active">Open Norney</a></li>
+  </ul>
+</nav>
+
+<main>
+
+  <div class="hero">
+    <div class="hero-label">Open Norney · AI Blog · 10 Guides</div>
+    <h1>🤖 Replicate this at home</h1>
+    <p>
+      These guides document how Norney Farm Bungalow was transformed into an off-grid, data-connected, productive home.
+      Every guide is written to be <strong>machine-readable</strong> — paste this page's URL into any LLM and ask it to adapt
+      the approach for your own property, location, and budget. This is how Open Norney works: freely shared, endlessly forkable.
+    </p>
+    <div class="url-strip">
+      <span class="url-strip-label">🔗 Page URL</span>
+      <span class="url-strip-url" id="pageUrl">https://norneyfarmbungalow.netlify.app/blog</span>
+      <button class="copy-btn" onclick="copyUrl()">Copy URL</button>
+    </div>
+  </div>
+
+  <div class="prompt-strip">
+    <div class="prompt-strip-label">How to use these guides with an LLM</div>
+    <div class="prompts">
+      <div class="prompt-eg"><strong>Starter prompt:</strong> "Read this page: [paste URL]. I live in a 3-bed semi in Yorkshire with a south-facing roof. What should I prioritise first and what would it cost me?"</div>
+      <div class="prompt-eg"><strong>Garden prompt:</strong> "Using the Norney garden guides, create a sowing plan for my clay soil garden in the East Midlands, starting from scratch."</div>
+      <div class="prompt-eg"><strong>Solar prompt:</strong> "Based on the Norney solar setup, what would be the equivalent system for a 2-bed flat with a shared roof — is it even possible?"</div>
+      <div class="prompt-eg"><strong>Dashboard prompt:</strong> "Walk me through replicating the Norney energy dashboard without any programming experience."</div>
+    </div>
+  </div>
+
+  <div class="post-index">
+    <div class="post-index-label">10 Guides</div>
+    <ol>
+      <li><a href="#post-1">Solar panels and battery storage: the Norney specification</a></li>
+      <li><a href="#post-2">Smart energy tariffs: how Octopus Flux works and why it matters</a></li>
+      <li><a href="#post-3">Building a live home energy dashboard from scratch</a></li>
+      <li><a href="#post-4">No-dig gardening: principles and first steps</a></li>
+      <li><a href="#post-5">Green manures and soil health for beginners</a></li>
+      <li><a href="#post-6">Growing food in a cool temperate climate: what actually works</a></li>
+      <li><a href="#post-7">Weather monitoring and microclimate data for your garden</a></li>
+      <li><a href="#post-8">Deploying a home dashboard to the web for free</a></li>
+      <li><a href="#post-9">Off-grid by design: a philosophy for retrofitting any home</a></li>
+      <li><a href="#post-10">Open Norney: how to fork this model for your own home</a></li>
+    </ol>
+  </div>
+
+  <!-- ── POST 1 ── -->
+  <article class="post" id="post-1">
+    <div class="post-number">Guide 01</div>
+    <h2>☀️ Solar panels and battery storage: the Norney specification</h2>
+    <div class="post-meta">
+      <span class="post-tag">Solar</span><span class="post-tag">Battery</span><span class="post-tag">Victron</span><span class="post-tag">~£12,000–18,000</span>
+    </div>
+    <div class="post-body">
+      <p>The Norney system was designed around a single principle: the battery is not an add-on — it is the core of the system. Solar panels charge the battery; the battery runs the house. The grid is a backup, not a primary source.</p>
+
+      <h3>The Norney specification</h3>
+      <ul>
+        <li><strong>Solar charger:</strong> Victron SmartSolar MPPT VE.Can 250/100 rev2 — handles up to 7,000W of panels, 100A charge current. This is oversized for most homes but provides headroom for expansion.</li>
+        <li><strong>Inverter/charger:</strong> Victron MultiPlus-II 48/5000/70-50 — 5,000W continuous output, 48V DC bus. Can pass through grid power and charge battery simultaneously.</li>
+        <li><strong>Battery:</strong> Pylontech US2000 LFP (Lithium Iron Phosphate) — 2.4kWh per module, typically stacked to 9.6–14.4kWh. LFP chemistry is safer and longer-lived than Li-NMC.</li>
+        <li><strong>Gateway:</strong> Victron Cerbo GX MK2 — the brain. Connects all devices via VE.Can and CAN bus, uploads data to Victron VRM cloud, enables remote monitoring.</li>
+        <li><strong>Grid meter:</strong> Victron Energy Meter VM-3P75CT — clamp-on current transformers measure grid import/export accurately.</li>
+      </ul>
+
+      <h3>Why Victron</h3>
+      <p>Victron Energy is a Dutch company that dominates the marine and off-grid market. Their components are modular, well-documented, and designed to work together. The VRM (Victron Remote Management) API is open — which is how this dashboard was built. Victron equipment is more expensive than consumer solar inverters but significantly more capable and repairable.</p>
+
+      <h3>Key decisions and trade-offs</h3>
+      <ul>
+        <li><strong>48V DC bus:</strong> Higher voltage = lower current = thinner cables and less heat loss. 48V is the right choice for anything above 3kW.</li>
+        <li><strong>LFP vs Li-NMC:</strong> LFP is heavier and slightly less energy-dense but tolerates 100% charge, partial state of charge, and lasts 3,000–6,000 cycles vs 500–1,000 for Li-NMC.</li>
+        <li><strong>ESS (Energy Storage System) mode:</strong> Victron's ESS software controls how the system prioritises solar, battery, and grid. The Norney system runs in "Keep batteries charged" mode with a 25W ESS setpoint — it imports a tiny standby current for stability but otherwise runs off solar and battery.</li>
+        <li><strong>Panels:</strong> South or south-west facing, 30–40° pitch, ideally no shading. Each panel adds roughly 400–450W at peak. 8–12 panels is typical for a domestic system.</li>
+      </ul>
+
+      <div class="callout callout-cost">
+        <strong>Approximate costs (UK, 2024):</strong> Solar panels (8 × 400W): £1,200–2,000 · MPPT charger: £800–1,200 · MultiPlus-II 5000: £1,400–1,800 · Pylontech battery (9.6kWh): £3,000–4,000 · Cerbo GX: £300–450 · Installation labour: £2,000–4,000 · <strong>Total: £10,000–16,000 installed</strong>. MCS-certified installers can access government schemes. DIY installation is legal for the electronics but you need a qualified electrician for grid connection.
+      </div>
+
+      <div class="callout callout-refs">
+        <strong>References:</strong><br/>
+        <a href="https://www.victronenergy.com/solar-charge-controllers/smartsolar-mppt-ve-can">Victron SmartSolar MPPT</a> ·
+        <a href="https://www.victronenergy.com/inverters-chargers/multiplus-ii">MultiPlus-II</a> ·
+        <a href="https://www.pylontech.com.cn/products/detail/US2000C.html">Pylontech US2000</a> ·
+        <a href="https://vrm.victronenergy.com">Victron VRM portal</a> ·
+        <a href="https://www.gov.uk/guidance/check-if-you-need-approval-to-install-solar-panels">UK solar planning guidance</a>
+      </div>
+
+      <div class="callout callout-prompt">
+        <strong>Ask an LLM:</strong> "Based on the Norney solar spec, design an equivalent system for my 3-bed house in [your location]. My roof faces [direction], has [area] m² available, and my average daily consumption is [kWh]. What size battery and inverter do I need, and what would it cost?"
+      </div>
+    </div>
+  </article>
+
+  <!-- ── POST 2 ── -->
+  <article class="post" id="post-2">
+    <div class="post-number">Guide 02</div>
+    <h2>⚡ Smart energy tariffs: how Octopus Flux works and why it matters</h2>
+    <div class="post-meta">
+      <span class="post-tag">Octopus</span><span class="post-tag">Agile</span><span class="post-tag">Tariff</span><span class="post-tag">UK only</span>
+    </div>
+    <div class="post-body">
+      <p>Having solar and a battery is only half the equation. The other half is when you import from and export to the grid. A smart time-of-use tariff turns your battery from passive storage into an active financial instrument.</p>
+
+      <h3>What Octopus Flux does</h3>
+      <p>Octopus Flux (and its predecessor Agile Octopus) is a UK electricity tariff where the unit rate changes every 30 minutes based on wholesale electricity prices. Rates can range from negative (they pay you to use electricity) to 80p/kWh at peak times. The strategy is simple: charge the battery when rates are cheap (typically 2am–6am), discharge it when rates are expensive (4pm–7pm).</p>
+
+      <ul>
+        <li><strong>Agile Octopus:</strong> Variable 30-min rates, set the day before. Rates published via API. Works with automation — Victron's ESS can be set to charge only below a threshold rate.</li>
+        <li><strong>Octopus Flux:</strong> Simplified version with three fixed bands — cheap, standard, peak. Better for people who want less complexity.</li>
+        <li><strong>Outgoing tariff:</strong> Octopus pays for exported solar via the Smart Export Guarantee (SEG). Rates vary by tariff. Agile Outgoing pays variable rates like import — potentially very high at peak.</li>
+      </ul>
+
+      <h3>The Norney operating logic</h3>
+      <ul>
+        <li>Solar generation → battery first, then house loads, then export</li>
+        <li>Off-peak (night) → import small amount to top up battery if low</li>
+        <li>Peak hours → run entirely from battery, export surplus at high rates</li>
+        <li>Victron ESS handles the switching automatically once configured</li>
+      </ul>
+
+      <h3>What this actually saves</h3>
+      <p>A well-optimised system with a 10kWh battery, 3–4kW of solar, and Octopus Agile can reasonably expect to pay £0–£30/month for electricity in summer, and £50–£80/month in winter (vs £150–£200 on a flat rate tariff). The economics depend heavily on your usage pattern and willingness to run high-consumption appliances (dishwasher, washing machine) during cheap periods.</p>
+
+      <div class="callout callout-tip">
+        <strong>Key insight:</strong> The battery pays for itself faster through tariff arbitrage than through solar self-consumption alone. In summer, cheap import rates can be 2–5p/kWh; peak export can be 20–50p/kWh. A 10kWh battery cycling once per day captures 15–45p × 10 = £1.50–£4.50 per day in spread, separate from solar savings.
+      </div>
+
+      <div class="callout callout-refs">
+        <strong>References:</strong><br/>
+        <a href="https://octopus.energy/agile/">Octopus Agile</a> ·
+        <a href="https://octopus.energy/flux/">Octopus Flux</a> ·
+        <a href="https://developer.octopus.energy/docs/api/">Octopus API documentation</a> ·
+        <a href="https://www.ofgem.gov.uk/check-if-energy-price-cap-affects-you">Ofgem price cap</a>
+      </div>
+
+      <div class="callout callout-prompt">
+        <strong>Ask an LLM:</strong> "I have a [size]kWh battery and [size]kW of solar in [your region]. Walk me through how to set up Octopus Agile and configure Victron ESS to maximise savings. What time windows should I target for charging and discharging?"
+      </div>
+    </div>
+  </article>
+
+  <!-- ── POST 3 ── -->
+  <article class="post" id="post-3">
+    <div class="post-number">Guide 03</div>
+    <h2>📊 Building a live home energy dashboard from scratch</h2>
+    <div class="post-meta">
+      <span class="post-tag">Dashboard</span><span class="post-tag">Victron API</span><span class="post-tag">HTML/JS</span><span class="post-tag">Free to deploy</span>
+    </div>
+    <div class="post-body">
+      <p>The Norney dashboard — the site you are on right now — is a set of static HTML files that talk directly to the Victron VRM API and Octopus API. There is no backend database, no server-side code (beyond a simple proxy), and no framework. It deploys to Netlify for free.</p>
+
+      <h3>How it works</h3>
+      <ul>
+        <li><strong>Victron VRM API:</strong> Victron provides a REST API at <code>vrmapi.victronenergy.com/v2</code>. Authenticate with a Bearer token. Returns live data (solar watts, battery %, grid power, AC load) and historical stats (daily yield, consumption).</li>
+        <li><strong>Octopus API:</strong> Octopus provides a REST API at <code>api.octopus.energy/v1</code>. Authenticate with an API key (Basic auth). Returns unit rates, consumption data per 30-min slot.</li>
+        <li><strong>Open-Meteo:</strong> Free, no-auth weather API at <code>api.open-meteo.com</code>. Returns current conditions, 7-day forecast, and 2 years of hourly historical weather (ERA5 reanalysis). No API key required.</li>
+        <li><strong>Netlify Functions:</strong> Two serverless functions (<code>api.js</code>, <code>octopus.js</code>) act as a proxy, adding auth headers server-side so keys aren't exposed in browser code.</li>
+        <li><strong>Chart.js 4.4:</strong> All charts are rendered with Chart.js via CDN. No build step required.</li>
+      </ul>
+
+      <h3>The tech stack</h3>
+      <ul>
+        <li><strong>Frontend:</strong> Vanilla HTML, CSS, JavaScript. No React, no build tools, no dependencies beyond Chart.js and Leaflet (for the map).</li>
+        <li><strong>Hosting:</strong> Netlify free tier — deploys automatically from GitHub on every push.</li>
+        <li><strong>Code:</strong> Open source at <a href="https://github.com/TimHopkin/norneyfarmbungalow">github.com/TimHopkin/norneyfarmbungalow</a>. Fork it and adapt.</li>
+        <li><strong>Cost:</strong> £0/month to run. Netlify free tier covers all traffic for a personal site.</li>
+      </ul>
+
+      <h3>Adapting it for your system</h3>
+      <p>The only things you need to change to make it work for your home are: your Victron site ID (found in VRM portal URL), your Octopus API key (in account settings), your MPAN meter number, and your tariff code. Everything else — the charts, the layout, the weather — works automatically.</p>
+
+      <div class="callout callout-tip">
+        <strong>No Victron system?</strong> The weather and garden pages work for anyone. The solar/energy pages require Victron hardware, but the same approach works for any inverter that has an API — SolarEdge, Enphase, GivEnergy, and SolarMan all have APIs. The code would need adapting but the architecture is identical.
+      </div>
+
+      <div class="callout callout-refs">
+        <strong>References:</strong><br/>
+        <a href="https://github.com/TimHopkin/norneyfarmbungalow">Norney Farm GitHub repo</a> ·
+        <a href="https://vrm.victronenergy.com/swagger/">Victron VRM API docs</a> ·
+        <a href="https://open-meteo.com/en/docs">Open-Meteo API docs</a> ·
+        <a href="https://docs.netlify.com/functions/overview/">Netlify Functions</a> ·
+        <a href="https://www.chartjs.org/docs/latest/">Chart.js documentation</a>
+      </div>
+
+      <div class="callout callout-prompt">
+        <strong>Ask an LLM:</strong> "I have a [brand] solar inverter. Show me how to adapt the Norney dashboard code to display my solar data. Here is my inverter's API documentation: [paste URL or describe it]."
+      </div>
+    </div>
+  </article>
+
+  <!-- ── POST 4 ── -->
+  <article class="post" id="post-4">
+    <div class="post-number">Guide 04</div>
+    <h2>🌱 No-dig gardening: principles and first steps</h2>
+    <div class="post-meta">
+      <span class="post-tag">Garden</span><span class="post-tag">No-dig</span><span class="post-tag">Beginner</span><span class="post-tag">Low cost</span>
+    </div>
+    <div class="post-body">
+      <p>No-dig gardening is not a new idea — it is a return to how soil actually works. The principle: soil is a living ecosystem. Digging disrupts fungal networks, exposes weed seeds, and destroys structure. Instead, suppress weeds with a cardboard mulch, add compost on top, and let worms do the cultivation.</p>
+
+      <h3>The core method</h3>
+      <ol>
+        <li><strong>Cardboard suppression:</strong> Lay thick cardboard (remove any tape/staples) directly over grass or weeds. Overlap edges by 15cm. Water thoroughly. This smothers existing growth and breaks down into the soil within 12 months.</li>
+        <li><strong>Compost layer:</strong> Add 10–15cm of well-rotted compost on top of the cardboard. This is where plants grow. The cardboard rots beneath and worms pull the compost down.</li>
+        <li><strong>No turning:</strong> Leave the soil structure intact. Add fresh compost to the surface each autumn. That's the entire maintenance system.</li>
+        <li><strong>Permanent beds:</strong> Work from defined paths — never stand on growing areas. 1.2m wide beds are ideal — reachable from both sides without stepping in.</li>
+      </ol>
+
+      <h3>Why it works</h3>
+      <p>Undisturbed soil develops mycorrhizal fungal networks that extend plant root systems and transfer nutrients. A teaspoon of healthy undisturbed soil contains more organisms than there are people on earth. Digging collapses these networks. No-dig preserves them and results in measurably higher yields for less labour after the first year.</p>
+
+      <h3>Getting started at Norney</h3>
+      <ul>
+        <li>The Norney kitchen garden was established on rough grass using the cardboard method</li>
+        <li>Free cardboard from local supermarkets, appliance shops, or delivery boxes</li>
+        <li>Compost sources: local council green waste scheme, farm suppliers, or start your own hot compost heap</li>
+        <li>First year crops: potatoes, courgettes, and squash are ideal — they suppress weeds and the harvest justifies the initial compost cost</li>
+      </ul>
+
+      <div class="callout callout-cost">
+        <strong>Start-up cost:</strong> Cardboard: free · Compost (5 tonnes for 40m² of beds): £200–400 from local suppliers · Seeds: £30–60 for a full first season · Tools (spade, trowel, hoe, watering can): £50–100 second-hand. <strong>Total to establish a productive 40m² garden: £300–500.</strong>
+      </div>
+
+      <div class="callout callout-refs">
+        <strong>References:</strong><br/>
+        <a href="https://charlesdowding.co.uk">Charles Dowding — no-dig pioneer (charlesdowding.co.uk)</a> ·
+        <a href="https://www.youtube.com/@CharlesDowding1nodig">Charles Dowding YouTube</a> ·
+        <a href="https://www.rhs.org.uk/soil-composts-mulches/no-dig-gardening">RHS no-dig guidance</a>
+      </div>
+
+      <div class="callout callout-prompt">
+        <strong>Ask an LLM:</strong> "I want to start a no-dig vegetable garden in my [size] garden in [location]. My soil is [clay/sandy/loam] and I get [hours] of sun per day. Create me a first-year plan: what to grow, when to sow, how much compost I need, and what to buy."
+      </div>
+    </div>
+  </article>
+
+  <!-- ── POST 5 ── -->
+  <article class="post" id="post-5">
+    <div class="post-number">Guide 05</div>
+    <h2>🌾 Green manures and soil health for beginners</h2>
+    <div class="post-meta">
+      <span class="post-tag">Soil</span><span class="post-tag">Green manures</span><span class="post-tag">Nitrogen</span><span class="post-tag">Regenerative</span>
+    </div>
+    <div class="post-body">
+      <p>Empty beds are a problem: rain leaches nutrients, weeds colonise, and soil structure degrades. Green manures solve this — they are crops you grow not to eat, but to improve the ground for whatever comes next.</p>
+
+      <h3>The Norney green manure rotation</h3>
+      <ul>
+        <li><strong>Winter rye + winter vetch (sow Sep–Oct):</strong> The most useful combination. Rye's deep roots break up compaction and suppress weeds; vetch fixes nitrogen from the air into the soil. Dig in or cut and mulch in March before they flower.</li>
+        <li><strong>Buckwheat (sow May–Aug):</strong> Summer green manure for gaps between crops. Fast-growing, weed-suppressing, and its white flowers are a magnet for hoverflies and pollinators. Dig in before it sets seed.</li>
+        <li><strong>Red clover (sow Mar–Sep):</strong> Nitrogen-fixing. Leaves the soil measurably richer in available nitrogen for the crop that follows. Particularly useful before brassicas, which are hungry feeders.</li>
+        <li><strong>White clover:</strong> Lower growing than red — can be used as a living mulch between brassica plants.</li>
+      </ul>
+
+      <h3>How nitrogen fixation works</h3>
+      <p>Leguminous plants (clovers, vetches, beans) host rhizobium bacteria in root nodules. These bacteria convert atmospheric nitrogen (78% of air) into ammonium — plant-available nitrogen. When you dig in the plant or it decomposes, that nitrogen becomes available to the next crop. This is free fertiliser from the air.</p>
+
+      <h3>The no-dig adaptation</h3>
+      <p>In a no-dig system, you don't dig in the green manure — you cut it at ground level and leave the roots to rot. The roots release their nitrogen as they decompose. You can then plant through the mulch of cut material, or compost it and top-dress.</p>
+
+      <div class="callout callout-cost">
+        <strong>Cost:</strong> Green manure seed mixes: £3–8 per 500g (covers 10–20m²). This is among the best-value inputs in the entire garden — far cheaper than bought fertiliser.
+      </div>
+
+      <div class="callout callout-refs">
+        <strong>References:</strong><br/>
+        <a href="https://www.gardenorganic.org.uk/expert-advice/garden-management/soil/green-manures">Garden Organic — green manures</a> ·
+        <a href="https://www.cotswoldseeds.com/categories/green-manures">Cotswold Seeds green manure range</a> ·
+        <a href="https://www.niab.com/research/farming-systems/cover-crops">NIAB cover crop research</a>
+      </div>
+
+      <div class="callout callout-prompt">
+        <strong>Ask an LLM:</strong> "Design me a green manure rotation for a 4-bed no-dig vegetable garden. I want to keep beds productive year-round and improve soil fertility without buying synthetic fertiliser. My climate is [temperate/continental/etc]."
+      </div>
+    </div>
+  </article>
+
+  <!-- ── POST 6 ── -->
+  <article class="post" id="post-6">
+    <div class="post-number">Guide 06</div>
+    <h2>🥕 Growing food in a cool temperate climate: what actually works</h2>
+    <div class="post-meta">
+      <span class="post-tag">Food growing</span><span class="post-tag">UK climate</span><span class="post-tag">Varieties</span><span class="post-tag">Surrey</span>
+    </div>
+    <div class="post-body">
+      <p>Growing food in the UK requires accepting the climate rather than fighting it. The winners are the crops that suit cool, damp conditions — not the ones that look exciting in seed catalogues but sulk in British summers. These are the crops that consistently perform at Norney (GU8, Surrey, last frost mid-April, sandy loam).</p>
+
+      <h3>Reliable performers for cool temperate climates</h3>
+      <ul>
+        <li><strong>Kale:</strong> The most reliable winter vegetable in the UK. Harvest November–March when little else is growing. Frost genuinely improves flavour. Varieties: Cavolo Nero (Italian), Red Russian (cold-hardy).</li>
+        <li><strong>Leeks:</strong> Extremely frost-hardy. Autumn Giant or Musselburgh for winter harvest. Dibber-planted, virtually no care needed once established.</li>
+        <li><strong>Garlic:</strong> Plant in October, harvest in June. Solent Wight softneck stores 6–9 months. Almost no work involved.</li>
+        <li><strong>Broad beans:</strong> Overwinter as autumn-sown seedlings, crop in May–June. The earliest meaningful harvest of the year. Aquadulce Claudia is the standard overwintering variety.</li>
+        <li><strong>Courgettes:</strong> Prolific in British summers. One plant produces abundantly from June–September. Pick when finger-sized for best flavour.</li>
+        <li><strong>Squash:</strong> Crown Prince and Uchiki Kuri store well through winter. One plant can produce 4–8 fruits that keep until February.</li>
+        <li><strong>Peas:</strong> Short season but worth it. Sow in guttering indoors January–February for the earliest harvest. Pick daily once cropping starts.</li>
+        <li><strong>Salad leaves:</strong> Year-round with a cold frame. Bolt-resistant varieties in summer; winter lettuce in the frame. Little Gem is almost indestructible.</li>
+      </ul>
+
+      <h3>What to avoid (or be cautious about)</h3>
+      <ul>
+        <li><strong>Tomatoes:</strong> Possible outdoors in a warm summer but need a south-facing wall or cold frame. Expect variable results.</li>
+        <li><strong>Sweetcorn:</strong> Needs a hot summer and a large block (minimum 4×4) for wind pollination. Possible but marginal in Surrey.</li>
+        <li><strong>Aubergines/melons:</strong> Need a polytunnel in the UK. Don't attempt outdoors.</li>
+      </ul>
+
+      <h3>The succession principle</h3>
+      <p>Never sow an entire packet at once. Sow a short row every 2–3 weeks (lettuce, radish, rocket, French beans, carrots). This gives a continuous harvest instead of a glut and a gap.</p>
+
+      <div class="callout callout-refs">
+        <strong>References:</strong><br/>
+        <a href="https://www.thompson-morgan.com">Thompson & Morgan seeds (T&M)</a> ·
+        <a href="https://www.realseeds.co.uk">Real Seeds — open-pollinated, UK-trialled varieties</a> ·
+        <a href="https://www.rhs.org.uk/vegetables/recommended-varieties">RHS recommended vegetable varieties</a> ·
+        <a href="https://www.metoffice.gov.uk/weather/forecast/gcpss8yzn">Met Office GU8 climate data</a>
+      </div>
+
+      <div class="callout callout-prompt">
+        <strong>Ask an LLM:</strong> "Using the Norney crop guide, create me a full 12-month sowing and harvesting calendar for a [size] plot in [your location]. Prioritise crops that minimise gaps in harvest. Include succession sowing intervals."
+      </div>
+    </div>
+  </article>
+
+  <!-- ── POST 7 ── -->
+  <article class="post" id="post-7">
+    <div class="post-number">Guide 07</div>
+    <h2>🌦️ Weather monitoring and microclimate data for your garden</h2>
+    <div class="post-meta">
+      <span class="post-tag">Weather</span><span class="post-tag">Open-Meteo</span><span class="post-tag">Microclimate</span><span class="post-tag">Free</span>
+    </div>
+    <div class="post-body">
+      <p>Understanding your microclimate is one of the highest-leverage things you can do as a grower. The Norney weather dashboard shows 2 years of daily temperature history, frost days per month, wind patterns, and solar radiation — all free, all derived from the same point location.</p>
+
+      <h3>Open-Meteo: a free weather data API</h3>
+      <p><a href="https://open-meteo.com">Open-Meteo</a> provides free access to global weather forecast and historical data. No API key required. Key endpoints:</p>
+      <ul>
+        <li><code>api.open-meteo.com/v1/forecast</code> — 7-day hourly forecast, current conditions</li>
+        <li><code>archive-api.open-meteo.com/v1/archive</code> — daily historical data back to 1940 (ERA5 reanalysis model)</li>
+        <li>Variables include: temperature max/min, precipitation, wind speed, sunshine duration, cloud cover, UV index</li>
+      </ul>
+
+      <h3>What the Norney weather data reveals</h3>
+      <ul>
+        <li><strong>Frost days:</strong> GU8 typically has last frost in mid-April. The dashboard tracks monthly frost days (days where minimum temperature drops below 0°C) over 2 years — useful for planning planting-out dates.</li>
+        <li><strong>Windy days:</strong> Days where daily maximum wind speed exceeds 40 km/h, shown by month. Autumn and early winter are the windiest periods — relevant for staking tall crops and protecting polytunnels.</li>
+        <li><strong>Solar radiation:</strong> Monthly sunshine hours directly correlate with solar panel output. This data validates the solar system's performance — comparing actual generation against expected from sunshine hours.</li>
+        <li><strong>Historical min/max temperature:</strong> Monthly absolute extremes show the real risk profile — not just averages, but what actually happened.</li>
+      </ul>
+
+      <h3>Building your own microclimate record</h3>
+      <p>The Open-Meteo archive uses ERA5 reanalysis (model-derived, not actual measurements) at roughly 9km resolution. For your specific garden, a local weather station adds accuracy. The Met Office WOW (Weather Observations Website) accepts data from amateur stations and adds it to the national record.</p>
+
+      <div class="callout callout-refs">
+        <strong>References:</strong><br/>
+        <a href="https://open-meteo.com/en/docs">Open-Meteo API documentation</a> ·
+        <a href="https://open-meteo.com/en/docs/historical-weather-api">Open-Meteo Historical API</a> ·
+        <a href="https://wow.metoffice.gov.uk">Met Office WOW (citizen weather)</a> ·
+        <a href="https://www.ecmwf.int/en/forecasts/datasets/reanalysis-datasets/era5">ERA5 reanalysis explained (ECMWF)</a>
+      </div>
+
+      <div class="callout callout-prompt">
+        <strong>Ask an LLM:</strong> "Using Open-Meteo data for [your postcode/lat-lon], fetch and summarise the last 2 years of weather for my garden. What are my average last and first frost dates, total annual sunshine hours, and windiest months? How should this change what I grow and when?"
+      </div>
+    </div>
+  </article>
+
+  <!-- ── POST 8 ── -->
+  <article class="post" id="post-8">
+    <div class="post-number">Guide 08</div>
+    <h2>🚀 Deploying a home dashboard to the web for free</h2>
+    <div class="post-meta">
+      <span class="post-tag">Netlify</span><span class="post-tag">GitHub</span><span class="post-tag">Deployment</span><span class="post-tag">No cost</span>
+    </div>
+    <div class="post-body">
+      <p>The Norney dashboard is hosted on Netlify's free tier and deployed automatically from GitHub. Every time a change is pushed to the GitHub repository, Netlify rebuilds and redeploys the site within 30 seconds. The total hosting cost is £0/month.</p>
+
+      <h3>The deployment pipeline</h3>
+      <ol>
+        <li><strong>GitHub repository:</strong> All code lives at <a href="https://github.com/TimHopkin/norneyfarmbungalow">github.com/TimHopkin/norneyfarmbungalow</a>. This is the single source of truth.</li>
+        <li><strong>Netlify:</strong> Connected to the GitHub repo. On every push to <code>main</code>, Netlify fetches the latest code and serves it globally via CDN.</li>
+        <li><strong>Netlify Functions:</strong> Two small JavaScript functions (<code>netlify/functions/api.js</code> and <code>octopus.js</code>) act as API proxies. They run serverlessly — no server to maintain. API keys are stored in Netlify environment variables (encrypted, not in code).</li>
+        <li><strong>Custom domain:</strong> Optional but easy — add your domain in Netlify and it handles SSL automatically via Let's Encrypt.</li>
+      </ol>
+
+      <h3>Step-by-step: deploy your own fork</h3>
+      <ol>
+        <li>Fork <a href="https://github.com/TimHopkin/norneyfarmbungalow">the GitHub repo</a></li>
+        <li>Create a free <a href="https://netlify.com">Netlify account</a></li>
+        <li>In Netlify: New site → Import from GitHub → select your fork</li>
+        <li>In Netlify site settings → Environment variables: add <code>VICTRON_KEY</code> and <code>OCTOPUS_KEY</code></li>
+        <li>Update <code>config.js</code> with your own site ID and tariff details</li>
+        <li>Push to GitHub — site deploys automatically</li>
+      </ol>
+
+      <h3>What you don't need</h3>
+      <p>No Node.js runtime. No Docker. No servers to maintain. No databases. No subscription services. The entire stack runs on free tiers of GitHub and Netlify with no expiry.</p>
+
+      <div class="callout callout-cost">
+        <strong>Total cost:</strong> GitHub: free · Netlify: free (100GB bandwidth/month, 125k function calls/month — far more than a personal site needs) · Domain: optional, ~£10/year · <strong>Running cost: £0–10/year</strong>
+      </div>
+
+      <div class="callout callout-refs">
+        <strong>References:</strong><br/>
+        <a href="https://github.com/TimHopkin/norneyfarmbungalow">Norney Farm repo to fork</a> ·
+        <a href="https://docs.netlify.com/get-started/">Netlify getting started</a> ·
+        <a href="https://docs.github.com/en/get-started/quickstart/fork-a-repo">GitHub: how to fork a repo</a>
+      </div>
+
+      <div class="callout callout-prompt">
+        <strong>Ask an LLM:</strong> "I want to fork the Norney Farm dashboard and adapt it for my own home. I have a [brand] solar system. Walk me through every file I need to change, what values to update, and how to deploy it to Netlify. I have basic HTML experience but no programming background."
+      </div>
+    </div>
+  </article>
+
+  <!-- ── POST 9 ── -->
+  <article class="post" id="post-9">
+    <div class="post-number">Guide 09</div>
+    <h2>🏠 Off-grid by design: a philosophy for retrofitting any home</h2>
+    <div class="post-meta">
+      <span class="post-tag">Philosophy</span><span class="post-tag">Retrofit</span><span class="post-tag">Off-grid</span><span class="post-tag">Any home</span>
+    </div>
+    <div class="post-body">
+      <p>Norney Farm Bungalow is not a purpose-built eco-home. It is a 1970s bungalow — a very ordinary building type, of which there are millions in the UK. The principle is that any such building can be transformed incrementally, with each improvement making the next one easier and more affordable.</p>
+
+      <h3>The sequencing that works</h3>
+      <ol>
+        <li><strong>Understand your baseline first.</strong> Before spending anything, measure your consumption for 3 months. A smart meter and the Octopus API give you half-hourly data. Know where your electricity actually goes (heating, hot water, lighting, appliances).</li>
+        <li><strong>Reduce demand before generating supply.</strong> LED lighting, A+++ appliances, draught sealing, and loft insulation cost far less per unit of energy saved than solar costs per unit generated. A well-insulated home is a much more efficient host for a solar system.</li>
+        <li><strong>Add solar.</strong> Size the system for your actual consumption, not an aspirational future usage. A 3–4kW system with 10kWh storage is appropriate for most UK households. Larger is not always better — the economics of export are less attractive than self-consumption.</li>
+        <li><strong>Add a smart tariff.</strong> Octopus Agile or Flux unlocks the battery's financial potential. Without a smart tariff, a battery primarily provides backup power — valuable but limited return on investment.</li>
+        <li><strong>Automate.</strong> Victron ESS, smart plugs, and time-of-use scheduling gradually shift consumption into cheap windows without any daily attention required.</li>
+        <li><strong>Monitor and iterate.</strong> This dashboard exists because visibility changes behaviour. When you can see in real time that you're importing at peak rates, you defer the dishwasher. Data makes the invisible visible.</li>
+      </ol>
+
+      <h3>The realistic timeline</h3>
+      <ul>
+        <li><strong>Year 1:</strong> Smart meter, LED upgrade, loft insulation, Octopus tariff switch — saves 20–40% on bills with minimal capital</li>
+        <li><strong>Year 2–3:</strong> Solar + battery installation — the major capital event, payback 7–12 years depending on usage</li>
+        <li><strong>Year 3+:</strong> Heat pump (replacing gas boiler), EV charger, rainwater harvesting — each step reduces dependence further</li>
+      </ul>
+
+      <div class="callout callout-tip">
+        <strong>The 1970s bungalow advantage:</strong> Bungalows typically have large, simple roofs — ideal for solar panels. Single-storey means loft insulation is maximally effective. The building form is actually well-suited to the retrofit sequence described here.
+      </div>
+
+      <div class="callout callout-refs">
+        <strong>References:</strong><br/>
+        <a href="https://www.energysavingtrust.org.uk/hub/quick-tips-to-save-energy/">Energy Saving Trust</a> ·
+        <a href="https://www.gov.uk/guidance/great-british-insulation-scheme">Great British Insulation Scheme</a> ·
+        <a href="https://www.heatpumps.co.uk">Heat Pump Association</a> ·
+        <a href="https://www.thegreenage.co.uk/tech/battery-storage-solar-panels/">Battery + solar economics (The Green Age)</a>
+      </div>
+
+      <div class="callout callout-prompt">
+        <strong>Ask an LLM:</strong> "My home is a [type] built in [decade] in [location]. My current energy bills are [£X/month]. Using the Norney retrofit sequence, create a prioritised 5-year improvement plan with estimated costs, savings, and payback periods for each step."
+      </div>
+    </div>
+  </article>
+
+  <!-- ── POST 10 ── -->
+  <article class="post" id="post-10">
+    <div class="post-number">Guide 10</div>
+    <h2>🔓 Open Norney: how to fork this model for your own home</h2>
+    <div class="post-meta">
+      <span class="post-tag">Open source</span><span class="post-tag">Community</span><span class="post-tag">Fork</span><span class="post-tag">Getting started</span>
+    </div>
+    <div class="post-body">
+      <p>Open Norney is the idea that a home can be a gift — not just to its occupants, but to anyone who wants to learn from it. Everything about Norney Farm Bungalow is documented and shared: the energy system specification, the garden planting notes, the dashboard code, the deployment process. All of it is forkable.</p>
+
+      <h3>What "forking" means for a home</h3>
+      <p>In software, forking means taking someone else's code, copying it, and adapting it for your own purposes. The same principle applies here. You don't have to start from scratch — you start from Norney, change what's different about your situation, and build from there. Your home becomes its own version. If you document and share it, someone else can fork yours.</p>
+
+      <h3>What you can take right now</h3>
+      <ul>
+        <li><strong>The dashboard code:</strong> Fork <a href="https://github.com/TimHopkin/norneyfarmbungalow">github.com/TimHopkin/norneyfarmbungalow</a>. Change the site ID, API keys, and location coordinates. Deploy to Netlify. You have a working energy dashboard within an hour.</li>
+        <li><strong>The garden data:</strong> The crop notes, sowing calendars, and variety recommendations in the Garden page are all specific to GU8 conditions. Use them as a starting point and adjust for your soil, climate, and space.</li>
+        <li><strong>The principles:</strong> Battery-first energy thinking. No-dig soil management. Data as teacher. Making the invisible visible. These don't depend on having Victron hardware or living in Surrey.</li>
+        <li><strong>The LLM approach:</strong> Every guide on this page is written to be fed into an AI assistant. Paste the URL, describe your situation, ask for adaptation. This is the fastest way to go from curiosity to action.</li>
+      </ul>
+
+      <h3>How to contribute back</h3>
+      <ul>
+        <li>Fork the GitHub repo and submit pull requests with improvements or new features</li>
+        <li>Document your own home adaptations and share the URL — we will link to forks</li>
+        <li>If you are a grower in a different climate, contribute crop notes for your conditions</li>
+        <li>If you have a different solar inverter, contribute an API adapter</li>
+      </ul>
+
+      <h3>The framing line</h3>
+      <p style="font-style:italic;color:var(--text);border-left:3px solid var(--blog-border);padding-left:1rem;margin:1rem 0;">
+        "Norney is not a private project. It is a working demonstration that anyone can learn from and adapt for their own home, their own land."
+      </p>
+
+      <div class="callout callout-refs">
+        <strong>Get started:</strong><br/>
+        <a href="https://github.com/TimHopkin/norneyfarmbungalow">Fork the repo on GitHub</a> ·
+        <a href="https://norneyfarmbungalow.netlify.app">Live dashboard</a> ·
+        <a href="https://norneyfarmbungalow.netlify.app/garden">Garden planner</a> ·
+        <a href="https://octopus.energy/join/norney">Join Octopus Energy</a> (referral — both parties get £50 credit)
+      </div>
+
+      <div class="callout callout-prompt">
+        <strong>Ask an LLM:</strong> "I want to create my own 'Open [my home name]' project based on the Norney model. I live in [location], my home is [description], I grow [what]. Help me identify the three most impactful things to do first, and what to document as I go so others can learn from my version."
+      </div>
+    </div>
+  </article>
+
+</main>
+
+<script>
+  document.getElementById('pageUrl').textContent = window.location.href;
+
+  function copyUrl() {
+    navigator.clipboard.writeText(window.location.href).then(() => {
+      const btn = document.querySelector('.copy-btn');
+      btn.textContent = 'Copied ✓';
+      setTimeout(() => btn.textContent = 'Copy URL', 2000);
+    });
+  }
+</script>
+</body>
+</html>
