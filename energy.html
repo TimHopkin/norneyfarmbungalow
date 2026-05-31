@@ -1,0 +1,888 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Norney Farm Bungalow · Energy</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <script src="config.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0d1117;
+      --surface: #161b22;
+      --surface2: #1f2937;
+      --border: #30363d;
+      --text: #e6edf3;
+      --muted: #8b949e;
+      --solar: #f59e0b;
+      --battery: #10b981;
+      --grid: #3b82f6;
+      --load: #a78bfa;
+      --oct: #ef4444;          /* Octopus brand pink-ish → using red accent */
+      --oct-dim: rgba(239,68,68,0.12);
+      --cheap: #10b981;
+      --mid: #f59e0b;
+      --peak: #ef4444;
+      --radius: 12px;
+    }
+
+    body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+    /* ── Nav ── */
+    nav {
+      position: sticky; top: 0; z-index: 100;
+      background: rgba(13,17,23,0.85); backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      padding: 0 2rem; display: flex; align-items: center; height: 60px; gap: 2rem;
+    }
+    .nav-brand { font-size: 0.95rem; font-weight: 600; display: flex; align-items: center; gap: 0.5rem; }
+    .nav-links { display: flex; gap: 0.25rem; list-style: none; }
+    .nav-links a {
+      display: block; padding: 0.4rem 0.9rem; border-radius: 6px;
+      font-size: 0.875rem; font-weight: 500; color: var(--muted);
+      text-decoration: none; transition: color 0.15s, background 0.15s;
+    }
+    .nav-links a:hover { color: var(--text); background: var(--surface2); }
+    .nav-links a.active { color: var(--oct); background: var(--oct-dim); }
+    .nav-status { margin-left: auto; display: flex; align-items: center; gap: 0.5rem; font-size: 0.8rem; color: var(--muted); }
+    .status-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--battery); animation: pulse 2s infinite; }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+
+    /* ── Layout ── */
+    main { max-width: 1200px; margin: 0 auto; padding: 2.5rem 2rem 4rem; }
+
+    .page-header { margin-bottom: 2rem; }
+    .page-header h1 { font-size: 1.75rem; font-weight: 700; letter-spacing: -0.02em; }
+    .page-header p { color: var(--muted); font-size: 0.875rem; margin-top: 0.25rem; }
+    .last-updated { font-size: 0.8rem; color: var(--muted); margin-top: 0.5rem; }
+
+    /* ── Current rate hero ── */
+    .rate-hero {
+      border-radius: var(--radius); padding: 2rem 2.5rem;
+      margin-bottom: 1.5rem; display: flex; align-items: center;
+      justify-content: space-between; gap: 2rem;
+      transition: background 0.5s, border-color 0.5s;
+    }
+    .rate-hero-label { font-size: 0.8rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 0.5rem; }
+    .rate-hero-value { font-size: 4rem; font-weight: 700; letter-spacing: -0.03em; line-height: 1; }
+    .rate-hero-value span { font-size: 1.5rem; font-weight: 400; color: var(--muted); margin-left: 0.25rem; }
+    .rate-hero-sub { color: var(--muted); font-size: 0.875rem; margin-top: 0.5rem; }
+    .rate-hero-right { text-align: right; flex-shrink: 0; }
+    .next-rate-label { font-size: 0.75rem; color: var(--muted); margin-bottom: 0.3rem; }
+    .next-rate-value { font-size: 1.5rem; font-weight: 600; }
+
+    /* ── Cards ── */
+    .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }
+    .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.25rem 1.5rem; transition: border-color 0.2s; }
+    .card:hover { border-color: #484f58; }
+    .card-label { font-size: 0.75rem; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); margin-bottom: 0.75rem; display: flex; align-items: center; gap: 0.4rem; }
+    .card-label .dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+    .card-value { font-size: 2rem; font-weight: 700; letter-spacing: -0.02em; line-height: 1; }
+    .card-unit { font-size: 0.9rem; font-weight: 400; color: var(--muted); margin-left: 0.2rem; }
+    .card-sub { font-size: 0.78rem; color: var(--muted); margin-top: 0.5rem; }
+
+    /* ── Section ── */
+    .section { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.75rem; margin-bottom: 1.5rem; }
+    .section-title { font-size: 0.75rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); margin-bottom: 1.25rem; }
+    .chart-container { position: relative; height: 240px; }
+
+    /* ── Rate timeline ── */
+    .rate-timeline {
+      display: grid;
+      grid-template-columns: repeat(48, 1fr);
+      gap: 2px;
+      height: 56px;
+      border-radius: 8px;
+      overflow: hidden;
+      margin-bottom: 0.75rem;
+    }
+    .rate-slot {
+      position: relative;
+      cursor: pointer;
+      transition: opacity 0.15s;
+    }
+    .rate-slot:hover { opacity: 0.8; }
+    .rate-slot.now::after {
+      content: '';
+      position: absolute;
+      top: 0; bottom: 0;
+      left: 50%;
+      width: 2px;
+      background: white;
+      transform: translateX(-50%);
+    }
+    .rate-timeline-labels {
+      display: flex; justify-content: space-between;
+      font-size: 0.7rem; color: var(--muted); padding: 0 2px;
+    }
+
+    /* ── Best slots ── */
+    .slots-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 0.6rem; }
+    .slot-card {
+      background: var(--bg); border: 1px solid var(--border);
+      border-radius: 8px; padding: 0.75rem 1rem;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .slot-time { font-size: 0.875rem; font-weight: 600; }
+    .slot-rate { font-size: 0.875rem; font-weight: 700; }
+
+    /* ── Colour helpers ── */
+    .c-cheap { color: var(--cheap); }
+    .c-mid   { color: var(--mid);   }
+    .c-peak  { color: var(--peak);  }
+
+    /* ── Legend ── */
+    .legend { display: flex; gap: 1.25rem; flex-wrap: wrap; }
+    .legend-item { display: flex; align-items: center; gap: 0.4rem; font-size: 0.78rem; color: var(--muted); }
+    .legend-dot { width: 8px; height: 8px; border-radius: 2px; flex-shrink: 0; }
+
+    .chart-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 1rem; }
+
+    /* ── Day tabs ── */
+    .day-tabs { display: flex; gap: 0.25rem; }
+    .day-tab { background: none; border: 1px solid var(--border); border-radius: 6px; color: var(--muted); cursor: pointer; font-size: 0.78rem; font-weight: 500; padding: 0.3rem 0.7rem; transition: all 0.15s; }
+    .day-tab:hover { color: var(--text); border-color: #484f58; }
+    .day-tab.active { background: var(--oct-dim); border-color: rgba(239,68,68,0.4); color: var(--oct); }
+
+    /* ── Band breakdown ── */
+    .bands-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; }
+    .band-card { background: var(--bg); border: 1px solid var(--border); border-radius: 10px; padding: 1rem 1.25rem; }
+    .band-card-header { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.75rem; font-size: 0.75rem; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; }
+    .band-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+    .band-range { font-size: 0.7rem; color: var(--muted); font-weight: 400; text-transform: none; letter-spacing: 0; }
+    .band-kwh { font-size: 1.6rem; font-weight: 700; line-height: 1; }
+    .band-cost { font-size: 0.8rem; color: var(--muted); margin-top: 0.3rem; }
+    .band-bar { height: 3px; background: var(--border); border-radius: 2px; margin-top: 0.6rem; overflow: hidden; }
+    .band-bar-fill { height: 100%; border-radius: 2px; }
+
+    /* ── History stats row ── */
+    .history-stats {
+      display: flex; gap: 2rem; flex-wrap: wrap;
+      margin-top: 1.25rem; padding-top: 1.25rem;
+      border-top: 1px solid var(--border);
+    }
+    .hstat { flex: 1; min-width: 120px; }
+    .hstat-label { font-size: 0.72rem; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); margin-bottom: 0.3rem; }
+    .hstat-value { font-size: 1.4rem; font-weight: 700; }
+    .hstat-sub { font-size: 0.75rem; color: var(--muted); margin-top: 0.1rem; }
+
+    /* ── Tooltip ── */
+    #rateTooltip {
+      position: fixed; background: #1f2937; border: 1px solid #30363d;
+      border-radius: 6px; padding: 0.4rem 0.7rem; font-size: 0.78rem;
+      pointer-events: none; display: none; z-index: 200; white-space: nowrap;
+    }
+
+    @media (max-width: 700px) {
+      nav { padding: 0 1rem; }
+      main { padding: 1.5rem 1rem 3rem; }
+      .rate-hero { flex-direction: column; }
+      .rate-hero-value { font-size: 3rem; }
+      .rate-timeline { grid-template-columns: repeat(24, 1fr); }
+    }
+  </style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-brand">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>
+      <polyline points="9 22 9 12 15 12 15 22"/>
+    </svg>
+    Norney Farm Bungalow
+  </div>
+  <ul class="nav-links">
+    <li><a href="index.html">Home</a></li>
+    <li><a href="solar.html">Solar</a></li>
+    <li><a href="energy.html" class="active">Energy</a></li>
+    <li><a href="weather.html">Weather</a></li>
+    <li><a href="#" style="opacity:0.4;pointer-events:none">History</a></li>
+  </ul>
+  <div class="nav-status">
+    <div class="status-dot" id="statusDot"></div>
+    <span id="statusText">Loading…</span>
+  </div>
+</nav>
+
+<div id="rateTooltip"></div>
+
+<main>
+  <div class="page-header">
+    <h1>⚡ Energy &amp; Tariff</h1>
+    <p>Agile Octopus · GSP H (South East) · MPAN 2000016245484</p>
+    <div class="last-updated">Last updated: <span id="lastUpdated">—</span></div>
+  </div>
+
+  <!-- Rate hero -->
+  <div class="rate-hero" id="rateHero" style="background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.25)">
+    <div>
+      <div class="rate-hero-label" id="rateLabel">Current Rate</div>
+      <div class="rate-hero-value" id="rateValue">—<span>p/kWh</span></div>
+      <div class="rate-hero-sub" id="rateSub">Loading Agile rates…</div>
+    </div>
+    <div class="rate-hero-right">
+      <div class="next-rate-label">Next slot</div>
+      <div class="next-rate-value" id="nextRate">—p</div>
+      <div style="font-size:0.75rem;color:var(--muted);margin-top:0.2rem" id="nextTime">—</div>
+    </div>
+  </div>
+
+  <!-- Stat cards -->
+  <div class="cards">
+    <div class="card">
+      <div class="card-label"><div class="dot" style="background:var(--cheap)"></div>Today's cheapest</div>
+      <div class="card-value c-cheap" id="cheapRate">—<span class="card-unit">p</span></div>
+      <div class="card-sub" id="cheapTime">—</div>
+    </div>
+    <div class="card">
+      <div class="card-label"><div class="dot" style="background:var(--peak)"></div>Today's peak</div>
+      <div class="card-value c-peak" id="peakRate">—<span class="card-unit">p</span></div>
+      <div class="card-sub" id="peakTime">—</div>
+    </div>
+    <div class="card">
+      <div class="card-label"><div class="dot" style="background:var(--mid)"></div>Yesterday imported</div>
+      <div class="card-value" style="color:var(--mid)" id="yestKwh">—<span class="card-unit">kWh</span></div>
+      <div class="card-sub" id="yestCost">est. cost: —</div>
+    </div>
+    <div class="card">
+      <div class="card-label"><div class="dot" style="background:var(--grid)"></div>Grid region</div>
+      <div class="card-value" style="color:var(--grid);font-size:1.4rem">South East</div>
+      <div class="card-sub">GSP H · Agile 24-10-01</div>
+    </div>
+  </div>
+
+  <!-- Rate timeline -->
+  <div class="section">
+    <div class="section-title">Today's Agile Rates — 30-minute slots</div>
+    <div class="rate-timeline" id="rateTimeline"></div>
+    <div class="rate-timeline-labels">
+      <span>00:00</span><span>03:00</span><span>06:00</span>
+      <span>09:00</span><span>12:00</span><span>15:00</span>
+      <span>18:00</span><span>21:00</span><span>24:00</span>
+    </div>
+  </div>
+
+  <!-- Best upcoming slots -->
+  <div class="section" id="bestSlotsSection">
+    <div class="section-title">Cheapest upcoming slots today</div>
+    <div class="slots-grid" id="bestSlots"></div>
+  </div>
+
+  <!-- Band breakdown -->
+  <div class="section" id="bandSection" style="display:none">
+    <div class="section-title">Consumption by price band — <span id="bandDay">—</span></div>
+    <div class="bands-grid" id="bandsGrid"></div>
+    <div style="margin-top:1rem;font-size:0.8rem;color:var(--muted)" id="bandTotal"></div>
+  </div>
+
+  <!-- Cost history -->
+  <div class="section">
+    <div class="chart-header">
+      <div>
+        <div class="section-title" style="margin-bottom:0.25rem">Daily Cost by Band &amp; Cumulative Total</div>
+        <div style="font-size:0.78rem;color:var(--muted)" id="historySubtitle">Loading all available data…</div>
+      </div>
+      <div class="legend">
+        <div class="legend-item"><div class="legend-dot" style="background:#10b981"></div>Cheap</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#84cc16"></div>Low-mid</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#f59e0b"></div>High-mid</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#ef4444"></div>Peak</div>
+        <div class="legend-item"><div class="legend-dot" style="background:rgba(167,139,250,0.9);border-radius:50%"></div>Cumulative £</div>
+      </div>
+    </div>
+    <div class="chart-container" style="height:280px"><canvas id="historyChart"></canvas></div>
+    <div class="history-stats" id="historyStats"></div>
+  </div>
+
+  <!-- Consumption chart -->
+  <div class="section">
+    <div class="chart-header">
+      <div>
+        <div class="section-title" style="margin-bottom:0.5rem">Half-hourly Consumption vs Rate</div>
+        <div class="day-tabs" id="consTabs">
+          <button class="day-tab active" data-days="2">2 days ago</button>
+          <button class="day-tab" data-days="3">3 days ago</button>
+          <button class="day-tab" data-days="7">Last 7 days</button>
+        </div>
+      </div>
+      <div class="legend">
+        <div class="legend-item"><div class="legend-dot" style="background:rgba(59,130,246,0.7)"></div>Imported kWh</div>
+        <div class="legend-item"><div class="legend-dot" style="background:rgba(239,68,68,0.8)"></div>Rate p/kWh</div>
+      </div>
+    </div>
+    <div class="chart-container"><canvas id="consChart"></canvas></div>
+  </div>
+
+</main>
+
+<script>
+  const MPAN   = '2000016245484';
+  const METER  = '23J0207090';
+  const TARIFF = 'E-1R-AGILE-24-10-01-H';
+  const PRODUCT = 'AGILE-24-10-01';
+
+  let consChart = null;
+
+  // ── Colour helpers ──────────────────────────────────────────────
+  function rateColour(p, min, max, alpha = 1) {
+    const mid = (min + max) / 2;
+    if (p <= min + (mid - min) * 0.4) return `rgba(16,185,129,${alpha})`;
+    if (p <= mid) return `rgba(132,204,22,${alpha})`;
+    if (p <= mid + (max - mid) * 0.5) return `rgba(245,158,11,${alpha})`;
+    return `rgba(239,68,68,${alpha})`;
+  }
+
+  function fmt2(v) { return v !== null && v !== undefined ? Number(v).toFixed(2) : '—'; }
+  function fmt3(v) { return v !== null && v !== undefined ? Number(v).toFixed(3) : '—'; }
+
+  function slotLabel(iso) {
+    return new Date(iso).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/London' });
+  }
+
+  // Return UTC ISO string for midnight local (BST) N days ago
+  function localMidnightUTC(daysBack) {
+    const d = new Date();
+    d.setDate(d.getDate() - daysBack);
+    // midnight in Europe/London
+    const local = new Date(d.toLocaleDateString('en-GB', { timeZone: 'Europe/London' }).split('/').reverse().join('-') + 'T00:00:00+01:00');
+    return local.toISOString();
+  }
+
+  function dayLabel(daysBack) {
+    const d = new Date();
+    d.setDate(d.getDate() - daysBack);
+    return d.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'Europe/London' });
+  }
+
+  // ── Rates ───────────────────────────────────────────────────────
+  async function fetchRates() {
+    const today = localMidnightUTC(0);
+    const tomorrow = localMidnightUTC(-1);
+    const url = PROXY_BASE + `/octopus/products/${PRODUCT}/electricity-tariffs/${TARIFF}/standard-unit-rates/?period_from=${today}&period_to=${tomorrow}&page_size=100&order_by=period_from`;
+    const r = await fetch(url);
+    const d = await r.json();
+    return (d.results || []).sort((a, b) => new Date(a.valid_from) - new Date(b.valid_from));
+  }
+
+  async function renderRates() {
+    try {
+      const rates = await fetchRates();
+      if (!rates.length) return;
+
+      const now = new Date();
+      const values = rates.map(r => r.value_inc_vat);
+      const min = Math.min(...values);
+      const max = Math.max(...values);
+
+      // Find current & next slot
+      let current = null, next = null;
+      for (let i = 0; i < rates.length; i++) {
+        const from = new Date(rates[i].valid_from);
+        const to   = new Date(rates[i].valid_to);
+        if (now >= from && now < to) { current = rates[i]; next = rates[i + 1] || null; break; }
+      }
+
+      // Hero
+      if (current) {
+        const p = current.value_inc_vat;
+        const hero = document.getElementById('rateHero');
+        const colour = rateColour(p, min, max);
+        const colourDim = rateColour(p, min, max, 0.12);
+        hero.style.background = colourDim;
+        hero.style.borderColor = colour.replace('1)', '0.35)');
+        document.getElementById('rateLabel').style.color = colour;
+        document.getElementById('rateValue').innerHTML = `${fmt2(p)}<span>p/kWh</span>`;
+        document.getElementById('rateValue').style.color = colour;
+        const label = p < min + (max - min) * 0.33 ? '🟢 Cheap — good time to run appliances'
+                    : p < min + (max - min) * 0.66 ? '🟡 Mid-range rate'
+                    : '🔴 Peak rate — avoid heavy loads';
+        document.getElementById('rateSub').textContent = `${slotLabel(current.valid_from)} – ${slotLabel(current.valid_to)}  ·  ${label}`;
+      }
+
+      if (next) {
+        const p = next.value_inc_vat;
+        document.getElementById('nextRate').innerHTML = `<span style="color:${rateColour(p, min, max)}">${fmt2(p)}p</span>`;
+        document.getElementById('nextTime').textContent = `from ${slotLabel(next.valid_from)}`;
+      }
+
+      // Cheapest / peak today
+      const sorted = [...rates].sort((a, b) => a.value_inc_vat - b.value_inc_vat);
+      const cheapest = sorted[0];
+      const peak = sorted[sorted.length - 1];
+      document.getElementById('cheapRate').innerHTML = `${fmt2(cheapest.value_inc_vat)}<span class="card-unit">p</span>`;
+      document.getElementById('cheapTime').textContent = `${slotLabel(cheapest.valid_from)} – ${slotLabel(cheapest.valid_to)}`;
+      document.getElementById('peakRate').innerHTML = `${fmt2(peak.value_inc_vat)}<span class="card-unit">p</span>`;
+      document.getElementById('peakTime').textContent = `${slotLabel(peak.valid_from)} – ${slotLabel(peak.valid_to)}`;
+
+      // Rate timeline
+      const timeline = document.getElementById('rateTimeline');
+      timeline.innerHTML = '';
+      const tooltip = document.getElementById('rateTooltip');
+      rates.forEach((slot, i) => {
+        const p = slot.value_inc_vat;
+        const from = new Date(slot.valid_from);
+        const to   = new Date(slot.valid_to);
+        const isNow = now >= from && now < to;
+        const div = document.createElement('div');
+        div.className = 'rate-slot' + (isNow ? ' now' : '');
+        div.style.background = rateColour(p, min, max, 0.85);
+        div.addEventListener('mousemove', e => {
+          tooltip.style.display = 'block';
+          tooltip.style.left = (e.clientX + 10) + 'px';
+          tooltip.style.top  = (e.clientY - 30) + 'px';
+          tooltip.textContent = `${slotLabel(slot.valid_from)}–${slotLabel(slot.valid_to)}: ${fmt2(p)}p/kWh`;
+        });
+        div.addEventListener('mouseleave', () => { tooltip.style.display = 'none'; });
+        timeline.appendChild(div);
+      });
+
+      // Best upcoming slots
+      const upcoming = rates.filter(r => new Date(r.valid_from) >= now);
+      const cheapUpcoming = [...upcoming].sort((a, b) => a.value_inc_vat - b.value_inc_vat).slice(0, 8);
+      const grid = document.getElementById('bestSlots');
+      grid.innerHTML = '';
+      cheapUpcoming.forEach(slot => {
+        const p = slot.value_inc_vat;
+        const div = document.createElement('div');
+        div.className = 'slot-card';
+        div.innerHTML = `
+          <div class="slot-time">${slotLabel(slot.valid_from)}<br><span style="font-size:0.7rem;color:var(--muted);font-weight:400">– ${slotLabel(slot.valid_to)}</span></div>
+          <div class="slot-rate" style="color:${rateColour(p, min, max)}">${fmt2(p)}p</div>
+        `;
+        grid.appendChild(div);
+      });
+      if (!upcoming.length) document.getElementById('bestSlotsSection').style.display = 'none';
+
+      document.getElementById('statusDot').style.background = 'var(--battery)';
+      document.getElementById('statusText').textContent = 'Live';
+      document.getElementById('lastUpdated').textContent = new Date().toLocaleTimeString('en-GB');
+
+    } catch (e) {
+      console.error('Rate fetch failed', e);
+      document.getElementById('statusDot').style.background = '#ef4444';
+      document.getElementById('statusText').textContent = 'Error';
+    }
+  }
+
+  // ── Consumption ─────────────────────────────────────────────────
+  async function fetchConsumption(daysBack) {
+    const from = localMidnightUTC(daysBack);
+    const to   = localMidnightUTC(daysBack - 1);
+    const url  = PROXY_BASE + `/octopus/electricity-meter-points/${MPAN}/meters/${METER}/consumption/?period_from=${from}&period_to=${to}&page_size=200&order_by=period`;
+    const r = await fetch(url);
+    const d = await r.json();
+    return (d.results || []);
+  }
+
+  async function fetchRatesForPeriod(fromISO, toISO) {
+    const url = PROXY_BASE + `/octopus/products/${PRODUCT}/electricity-tariffs/${TARIFF}/standard-unit-rates/?period_from=${fromISO}&period_to=${toISO}&page_size=500&order_by=period_from`;
+    const r = await fetch(url);
+    const d = await r.json();
+    return (d.results || []).sort((a, b) => new Date(a.valid_from) - new Date(b.valid_from));
+  }
+
+  function renderBands(consumption, ratesPts, rMin, rMax, daysBack) {
+    const mid = (rMin + rMax) / 2;
+    const bands = [
+      { label: 'Cheap',  colour: '#10b981', bg: 'rgba(16,185,129,0.15)',  test: p => p <= rMin + (mid - rMin) * 0.4, kwh: 0, cost: 0, min: Infinity, max: -Infinity },
+      { label: 'Low-mid',colour: '#84cc16', bg: 'rgba(132,204,22,0.15)',  test: p => p <= mid,                         kwh: 0, cost: 0, min: Infinity, max: -Infinity },
+      { label: 'High-mid',colour: '#f59e0b',bg: 'rgba(245,158,11,0.15)',  test: p => p <= mid + (rMax - mid) * 0.5,   kwh: 0, cost: 0, min: Infinity, max: -Infinity },
+      { label: 'Peak',   colour: '#ef4444', bg: 'rgba(239,68,68,0.15)',   test: () => true,                            kwh: 0, cost: 0, min: Infinity, max: -Infinity },
+    ];
+
+    consumption.forEach((c, i) => {
+      const rate = ratesPts[i];
+      if (rate === null) return;
+      for (const band of bands) {
+        if (band.test(rate)) {
+          band.kwh  += c.consumption;
+          band.cost += c.consumption * rate / 100;
+          band.min   = Math.min(band.min, rate);
+          band.max   = Math.max(band.max, rate);
+          break;
+        }
+      }
+    });
+
+    const totalKwh  = bands.reduce((s, b) => s + b.kwh, 0);
+    const totalCost = bands.reduce((s, b) => s + b.cost, 0);
+
+    // Update stat card if this is 2-days-ago (most recent complete day)
+    if (daysBack === 2) {
+      document.getElementById('yestKwh').innerHTML = `${fmt2(totalKwh)}<span class="card-unit">kWh</span>`;
+      document.getElementById('yestCost').textContent = `est. cost: £${fmt2(totalCost)}`;
+    }
+
+    document.getElementById('bandSection').style.display = 'block';
+    document.getElementById('bandDay').textContent = dayLabel(daysBack);
+    document.getElementById('bandTotal').textContent =
+      `Total imported: ${fmt2(totalKwh)} kWh · Estimated cost: £${fmt2(totalCost)} · Avg rate: ${totalKwh > 0 ? fmt2(totalCost / totalKwh * 100) : '—'}p/kWh`;
+
+    const grid = document.getElementById('bandsGrid');
+    grid.innerHTML = '';
+    bands.forEach(band => {
+      if (band.kwh === 0) return;
+      const pct = totalKwh > 0 ? (band.kwh / totalKwh * 100) : 0;
+      const rangeStr = band.min === Infinity ? '' : `${fmt2(band.min)}–${fmt2(band.max)}p/kWh`;
+      grid.insertAdjacentHTML('beforeend', `
+        <div class="band-card" style="border-color:${band.colour}33">
+          <div class="band-card-header" style="color:${band.colour}">
+            <div class="band-dot" style="background:${band.colour}"></div>
+            ${band.label}
+            <span class="band-range">${rangeStr}</span>
+          </div>
+          <div class="band-kwh" style="color:${band.colour}">${fmt2(band.kwh)} <span style="font-size:1rem;font-weight:400;color:var(--muted)">kWh</span></div>
+          <div class="band-cost">£${fmt2(band.cost)} · ${fmt2(pct)}% of usage</div>
+          <div class="band-bar"><div class="band-bar-fill" style="width:${pct}%;background:${band.colour}"></div></div>
+        </div>
+      `);
+    });
+  }
+
+  async function renderConsumption(daysBack) {
+    try {
+      const from = localMidnightUTC(daysBack);
+      const to   = localMidnightUTC(daysBack - 1);
+
+      const [consumption, rates] = await Promise.all([
+        fetchConsumption(daysBack),
+        fetchRatesForPeriod(from, to),
+      ]);
+
+      if (!consumption.length) {
+        renderEmptyChart(`No data for ${dayLabel(daysBack)} yet — smart meter data has a 24–48h delay`);
+        document.getElementById('bandSection').style.display = 'none';
+        return;
+      }
+
+      // Match each consumption slot to its rate via UTC timestamp
+      const rateMap = new Map();
+      for (const r of rates) rateMap.set(r.valid_from.slice(0, 16), r.value_inc_vat);
+
+      const kwh = consumption.map(c => c.consumption);
+      const ratesPts = consumption.map(c => {
+        const utcKey = new Date(c.interval_start).toISOString().slice(0, 16);
+        return rateMap.get(utcKey) ?? null;
+      });
+
+      const allRates = ratesPts.filter(Boolean);
+      const rMin = allRates.length ? Math.min(...allRates) : 0;
+      const rMax = allRates.length ? Math.max(...allRates) : 50;
+      const barColours = ratesPts.map(r => r ? rateColour(r, rMin, rMax, 0.8) : 'rgba(99,102,241,0.5)');
+
+      const labels = consumption.map(c =>
+        new Date(c.interval_start).toLocaleString('en-GB', {
+          hour: '2-digit', minute: '2-digit',
+          ...(daysBack > 3 ? { day: 'numeric', month: 'short' } : {}),
+          timeZone: 'Europe/London'
+        })
+      );
+
+      const ctx = document.getElementById('consChart').getContext('2d');
+      if (consChart) consChart.destroy();
+      consChart = new Chart(ctx, {
+        data: {
+          labels,
+          datasets: [
+            {
+              type: 'bar', label: 'Imported kWh', data: kwh,
+              backgroundColor: barColours, borderWidth: 0, borderRadius: 2, yAxisID: 'y',
+            },
+            {
+              type: 'line', label: 'Rate p/kWh', data: ratesPts,
+              borderColor: 'rgba(239,68,68,0.7)', backgroundColor: 'rgba(239,68,68,0.04)',
+              borderWidth: 1.5, pointRadius: 0, pointHoverRadius: 3,
+              tension: 0.3, fill: false, yAxisID: 'y2',
+            }
+          ]
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          interaction: { mode: 'index', intersect: false },
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              backgroundColor: '#1f2937', borderColor: '#30363d', borderWidth: 1,
+              titleColor: '#e6edf3', bodyColor: '#8b949e', padding: 10,
+              callbacks: {
+                afterBody: items => {
+                  const k = items[0]?.raw, rate = items[1]?.raw;
+                  if (k && rate) return [`Cost: ${(k * rate / 100 * 100).toFixed(2)}p`];
+                  return [];
+                }
+              }
+            }
+          },
+          scales: {
+            x: { grid: { color: 'rgba(48,54,61,0.5)' }, ticks: { color: '#8b949e', font: { size: 10 }, maxTicksLimit: 24 } },
+            y: {
+              position: 'left', grid: { color: 'rgba(48,54,61,0.5)' },
+              ticks: { color: '#8b949e', font: { size: 11 } },
+              title: { display: true, text: 'kWh', color: '#8b949e', font: { size: 11 } }
+            },
+            y2: {
+              position: 'right', grid: { drawOnChartArea: false },
+              ticks: { color: '#ef4444', font: { size: 11 }, callback: v => v + 'p' },
+              title: { display: true, text: 'p/kWh', color: '#ef4444', font: { size: 11 } }
+            }
+          }
+        }
+      });
+
+      renderBands(consumption, ratesPts, rMin, rMax, daysBack);
+
+    } catch (e) {
+      console.error('Consumption fetch failed', e);
+      renderEmptyChart('Failed to load consumption data');
+    }
+  }
+
+  function renderEmptyChart(msg) {
+    const ctx = document.getElementById('consChart').getContext('2d');
+    if (consChart) consChart.destroy();
+    consChart = new Chart(ctx, {
+      type: 'bar', data: { labels: [msg], datasets: [{ data: [0] }] },
+      options: { plugins: { legend: { display: false } }, scales: { x: { ticks: { color: '#8b949e' } }, y: { display: false } } }
+    });
+  }
+
+  // ── Tab controls ────────────────────────────────────────────────
+  let activeDays = 2;
+  document.getElementById('consTabs').addEventListener('click', e => {
+    const btn = e.target.closest('.day-tab');
+    if (!btn) return;
+    document.querySelectorAll('.day-tab').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    activeDays = parseInt(btn.dataset.days);
+    renderConsumption(activeDays);
+  });
+
+  // ── Cost history (12-month monthly view) ────────────────────────
+  let historyChart = null;
+  const SOLAR_DATE = new Date('2026-04-27T00:00:00Z'); // installation date
+
+  function monthRange(year, month) {
+    // Returns { from, to } as UTC ISO strings bracketing the full local month
+    const from = new Date(Date.UTC(year, month - 1, 1) - 3600000); // -1h for BST safety
+    const to   = new Date(Date.UTC(year, month, 1) + 3600000);
+    return { from: from.toISOString(), to: to.toISOString() };
+  }
+
+  async function fetchMonth(year, month) {
+    const { from, to } = monthRange(year, month);
+    const [consResp, ratesResp] = await Promise.all([
+      fetch(`/octopus/electricity-meter-points/${MPAN}/meters/${METER}/consumption/?period_from=${from}&period_to=${to}&page_size=1500&order_by=period`),
+      fetch(`/octopus/products/${PRODUCT}/electricity-tariffs/${TARIFF}/standard-unit-rates/?period_from=${from}&period_to=${to}&page_size=1500&order_by=period_from`),
+    ]);
+    const [consData, ratesData] = await Promise.all([consResp.json(), ratesResp.json()]);
+
+    const cons  = consData.results  || [];
+    const rates = ratesData.results || [];
+
+    const rateMap = new Map();
+    for (const r of rates) rateMap.set(r.valid_from.slice(0, 16), r.value_inc_vat);
+
+    let kwh = 0, cheap = 0, lowmid = 0, highmid = 0, peak = 0;
+    for (const c of cons) {
+      const utcKey = new Date(c.interval_start).toISOString().slice(0, 16);
+      const rate   = rateMap.get(utcKey) ?? null;
+      kwh += c.consumption;
+      if (rate === null) continue;
+      const cost = c.consumption * rate / 100;
+      if      (rate <= 18) cheap   += cost;
+      else if (rate <= 24) lowmid  += cost;
+      else if (rate <= 30) highmid += cost;
+      else                 peak    += cost;
+    }
+    return { kwh, cheap, lowmid, highmid, peak, slots: cons.length };
+  }
+
+  async function renderHistory() {
+    document.getElementById('historySubtitle').textContent = 'Fetching 13 months of data…';
+    try {
+      // Build list of months: 13 months ending with current
+      const now = new Date();
+      const months = [];
+      for (let i = 12; i >= 0; i--) {
+        const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+        months.push({ year: d.getFullYear(), month: d.getMonth() + 1 });
+      }
+
+      // Fetch all months in parallel
+      const results = await Promise.all(months.map(({ year, month }) => fetchMonth(year, month)));
+
+      const labels = months.map(({ year, month }) =>
+        new Date(year, month - 1, 1).toLocaleDateString('en-GB', { month: 'short', year: '2-digit' })
+      );
+
+      const cheap   = results.map(r => +r.cheap.toFixed(2));
+      const lowmid  = results.map(r => +r.lowmid.toFixed(2));
+      const highmid = results.map(r => +r.highmid.toFixed(2));
+      const peak    = results.map(r => +r.peak.toFixed(2));
+      const kwhArr  = results.map(r => +r.kwh.toFixed(1));
+
+      let running = 0;
+      const cumulative = results.map(r => {
+        running += r.cheap + r.lowmid + r.highmid + r.peak;
+        return +running.toFixed(2);
+      });
+
+      // Find solar install month index for annotation
+      const solarMonthIdx = months.findIndex(({ year, month }) =>
+        year === SOLAR_DATE.getFullYear() && month === SOLAR_DATE.getMonth() + 1
+      );
+
+      // Custom annotation plugin (vertical line)
+      const annotationPlugin = {
+        id: 'solarLine',
+        afterDraw(chart) {
+          if (solarMonthIdx < 0) return;
+          const { ctx, chartArea: { top, bottom }, scales: { x } } = chart;
+          const xPos = x.getPixelForValue(solarMonthIdx);
+          ctx.save();
+          ctx.beginPath();
+          ctx.moveTo(xPos, top);
+          ctx.lineTo(xPos, bottom);
+          ctx.strokeStyle = 'rgba(245,158,11,0.7)';
+          ctx.lineWidth = 2;
+          ctx.setLineDash([5, 4]);
+          ctx.stroke();
+          ctx.setLineDash([]);
+          ctx.fillStyle = 'rgba(245,158,11,0.85)';
+          ctx.font = '600 11px Inter, sans-serif';
+          ctx.textAlign = 'left';
+          ctx.fillText('☀️ Solar on', xPos + 5, top + 14);
+          ctx.restore();
+        }
+      };
+
+      const ctx = document.getElementById('historyChart').getContext('2d');
+      if (historyChart) historyChart.destroy();
+      historyChart = new Chart(ctx, {
+        plugins: [annotationPlugin],
+        data: {
+          labels,
+          datasets: [
+            { type: 'bar',  label: 'Cheap (≤18p)',     data: cheap,      backgroundColor: 'rgba(16,185,129,0.8)',  borderWidth: 0, borderRadius: 3, stack: 'cost', yAxisID: 'y' },
+            { type: 'bar',  label: 'Low-mid (18–24p)', data: lowmid,     backgroundColor: 'rgba(132,204,22,0.8)', borderWidth: 0, borderRadius: 0, stack: 'cost', yAxisID: 'y' },
+            { type: 'bar',  label: 'High-mid (24–30p)',data: highmid,    backgroundColor: 'rgba(245,158,11,0.8)', borderWidth: 0, borderRadius: 0, stack: 'cost', yAxisID: 'y' },
+            { type: 'bar',  label: 'Peak (>30p)',       data: peak,       backgroundColor: 'rgba(239,68,68,0.8)',  borderWidth: 0, borderRadius: 0, stack: 'cost', yAxisID: 'y' },
+            {
+              type: 'line', label: 'Cumulative £',      data: cumulative,
+              borderColor: 'rgba(167,139,250,1)', backgroundColor: 'rgba(167,139,250,0.06)',
+              borderWidth: 2.5, pointRadius: 3, pointBackgroundColor: 'rgba(167,139,250,1)',
+              tension: 0.3, fill: true, yAxisID: 'y2',
+            },
+            {
+              type: 'line', label: 'Monthly kWh',       data: kwhArr,
+              borderColor: 'rgba(59,130,246,0.6)', backgroundColor: 'transparent',
+              borderWidth: 1.5, pointRadius: 2, borderDash: [4,3],
+              tension: 0.3, fill: false, yAxisID: 'y3',
+            }
+          ]
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          interaction: { mode: 'index', intersect: false },
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              backgroundColor: '#1f2937', borderColor: '#30363d', borderWidth: 1,
+              titleColor: '#e6edf3', bodyColor: '#8b949e', padding: 12,
+              callbacks: {
+                label: item => {
+                  if (item.dataset.label === 'Cumulative £')  return ` Cumulative: £${item.raw.toFixed(2)}`;
+                  if (item.dataset.label === 'Monthly kWh')   return ` Imported: ${item.raw} kWh`;
+                  return ` ${item.dataset.label}: £${item.raw.toFixed(2)}`;
+                },
+                afterBody: items => {
+                  const i = items[0]?.dataIndex;
+                  if (i === undefined) return [];
+                  const total = (cheap[i]||0)+(lowmid[i]||0)+(highmid[i]||0)+(peak[i]||0);
+                  return [`─────────────`, ` Monthly total: £${total.toFixed(2)}`];
+                }
+              }
+            }
+          },
+          scales: {
+            x: { grid: { color: 'rgba(48,54,61,0.5)' }, ticks: { color: '#8b949e', font: { size: 11 } } },
+            y: {
+              position: 'left', stacked: true,
+              grid: { color: 'rgba(48,54,61,0.5)' },
+              ticks: { color: '#8b949e', font: { size: 11 }, callback: v => '£' + v.toFixed(0) },
+              title: { display: true, text: 'Monthly cost £', color: '#8b949e', font: { size: 11 } }
+            },
+            y2: {
+              position: 'right', grid: { drawOnChartArea: false },
+              ticks: { color: 'rgba(167,139,250,0.8)', font: { size: 11 }, callback: v => '£' + v.toFixed(0) },
+              title: { display: true, text: 'Cumulative £', color: 'rgba(167,139,250,0.8)', font: { size: 11 } }
+            },
+            y3: {
+              position: 'right', display: false, // hidden axis for kWh scale
+              ticks: { color: 'rgba(59,130,246,0.7)', font: { size: 11 } },
+            }
+          }
+        }
+      });
+
+      // Summary stats
+      const totalCost    = running;
+      const totalKwh     = results.reduce((s, r) => s + r.kwh, 0);
+      const preSolarIdx  = solarMonthIdx >= 0 ? solarMonthIdx : results.length;
+      const postResults  = results.slice(preSolarIdx);
+      const preResults   = results.slice(0, preSolarIdx);
+      const avgPreKwh    = preResults.length  ? preResults.reduce((s,r)=>s+r.kwh,0)  / preResults.length  : 0;
+      const avgPostKwh   = postResults.length ? postResults.reduce((s,r)=>s+r.kwh,0) / postResults.length : 0;
+      const avgPreCost   = preResults.length  ? preResults.reduce((s,r)=>s+r.cheap+r.lowmid+r.highmid+r.peak,0)  / preResults.length  : 0;
+      const avgPostCost  = postResults.length ? postResults.reduce((s,r)=>s+r.cheap+r.lowmid+r.highmid+r.peak,0) / postResults.length : 0;
+      const savedPerMonth = avgPreCost - avgPostCost;
+      const savedTotal    = savedPerMonth * postResults.length;
+
+      document.getElementById('historySubtitle').textContent =
+        `13 months · Solar panels installed 27 Apr 2026 · Data from Octopus Agile`;
+
+      document.getElementById('historyStats').innerHTML = `
+        <div class="hstat">
+          <div class="hstat-label">Total spent (13 mo)</div>
+          <div class="hstat-value" style="color:var(--load)">£${totalCost.toFixed(2)}</div>
+          <div class="hstat-sub">${(totalKwh).toFixed(0)} kWh imported</div>
+        </div>
+        <div class="hstat">
+          <div class="hstat-label">Pre-solar avg/month</div>
+          <div class="hstat-value" style="color:var(--oct)">£${avgPreCost.toFixed(2)}</div>
+          <div class="hstat-sub">${avgPreKwh.toFixed(0)} kWh/month avg</div>
+        </div>
+        <div class="hstat">
+          <div class="hstat-label">Post-solar avg/month</div>
+          <div class="hstat-value" style="color:var(--battery)">£${avgPostCost.toFixed(2)}</div>
+          <div class="hstat-sub">${avgPostKwh.toFixed(0)} kWh/month avg</div>
+        </div>
+        <div class="hstat">
+          <div class="hstat-label">Est. grid saving so far</div>
+          <div class="hstat-value" style="color:var(--solar)">£${savedTotal > 0 ? savedTotal.toFixed(2) : '—'}</div>
+          <div class="hstat-sub">${savedPerMonth > 0 ? `~£${savedPerMonth.toFixed(2)}/month less` : 'accumulating…'}</div>
+        </div>
+      `;
+
+    } catch(e) {
+      console.error('History fetch failed', e);
+      document.getElementById('historySubtitle').textContent = 'Failed to load history';
+    }
+  }
+
+  // ── Init ────────────────────────────────────────────────────────
+  renderRates();
+  renderConsumption(2);
+  renderHistory();
+
+  setInterval(renderRates, 300_000);
+  setInterval(() => renderConsumption(activeDays), 300_000);
+</script>
+</body>
+</html>

@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Norney Farm · Home</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://unpkg.com/proj4@2.11.0/dist/proj4.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0d1117;
+      --surface: #161b22;
+      --surface2: #1f2937;
+      --border: #30363d;
+      --text: #e6edf3;
+      --muted: #8b949e;
+      --solar: #f59e0b;
+      --solar-dim: rgba(245,158,11,0.12);
+      --battery: #10b981;
+      --battery-dim: rgba(16,185,129,0.12);
+      --grid: #3b82f6;
+      --grid-dim: rgba(59,130,246,0.12);
+      --load: #a78bfa;
+      --load-dim: rgba(167,139,250,0.12);
+      --radius: 12px;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    /* ── Nav ── */
+    nav {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: rgba(13,17,23,0.85);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      padding: 0 2rem;
+      display: flex;
+      align-items: center;
+      height: 60px;
+      gap: 2rem;
+    }
+
+    .nav-brand {
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: var(--text);
+      white-space: nowrap;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 0.25rem;
+      list-style: none;
+    }
+
+    .nav-links a {
+      display: block;
+      padding: 0.4rem 0.9rem;
+      border-radius: 6px;
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: var(--muted);
+      text-decoration: none;
+      transition: color 0.15s, background 0.15s;
+    }
+
+    .nav-links a:hover { color: var(--text); background: var(--surface2); }
+    .nav-links a.active { color: var(--solar); background: var(--solar-dim); }
+
+    /* ── Layout ── */
+    main {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 3rem 2rem 5rem;
+    }
+
+    /* ── Hero ── */
+    .hero {
+      margin-bottom: 3rem;
+      padding-bottom: 3rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .hero-eyebrow {
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--solar);
+      margin-bottom: 1rem;
+    }
+
+    .hero h1 {
+      font-size: clamp(1.75rem, 4vw, 2.75rem);
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      line-height: 1.15;
+      color: var(--text);
+      margin-bottom: 1.25rem;
+      max-width: 700px;
+    }
+
+    .hero p {
+      font-size: 1.05rem;
+      line-height: 1.7;
+      color: var(--muted);
+      max-width: 640px;
+    }
+
+    /* ── Principles strip ── */
+    .principles {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-top: 2rem;
+    }
+
+    .principle-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 0.35rem 0.8rem;
+      border-radius: 20px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      border: 1px solid;
+    }
+
+    .pt-solar   { background: var(--solar-dim);   border-color: rgba(245,158,11,0.3);  color: var(--solar);  }
+    .pt-connect { background: var(--grid-dim);     border-color: rgba(59,130,246,0.3);  color: var(--grid);   }
+    .pt-design  { background: rgba(236,72,153,0.1); border-color: rgba(236,72,153,0.3); color: #f472b6;       }
+    .pt-learn   { background: var(--battery-dim);  border-color: rgba(16,185,129,0.3);  color: var(--battery);}
+    .pt-open    { background: var(--load-dim);     border-color: rgba(167,139,250,0.3); color: var(--load);   }
+
+    /* ── Map ── */
+    .map-section {
+      margin-bottom: 2.5rem;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+
+    .map-label {
+      padding: 0.75rem 1.25rem;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--muted);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    #site-map {
+      height: 380px;
+      width: 100%;
+    }
+
+    /* Override Leaflet attribution styling */
+    .leaflet-control-attribution {
+      background: rgba(13,17,23,0.75) !important;
+      color: #8b949e !important;
+      font-size: 10px !important;
+    }
+
+    .leaflet-control-attribution a { color: #8b949e !important; }
+
+    /* ── Pillar sections ── */
+    .pillar {
+      margin-bottom: 2.5rem;
+      padding: 2rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      display: grid;
+      grid-template-columns: 1fr 2fr;
+      gap: 2rem;
+      align-items: start;
+    }
+
+    .pillar-left {}
+
+    .pillar-icon {
+      font-size: 2rem;
+      margin-bottom: 0.75rem;
+      display: block;
+    }
+
+    .pillar-number {
+      font-size: 0.65rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 0.25rem;
+    }
+
+    .pillar-title {
+      font-size: 1.05rem;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+      line-height: 1.3;
+      color: var(--text);
+    }
+
+    .pillar-title-solar   { color: var(--solar); }
+    .pillar-title-connect { color: var(--grid); }
+    .pillar-title-design  { color: #f472b6; }
+    .pillar-title-learn   { color: var(--battery); }
+    .pillar-title-open    { color: var(--load); }
+
+    .pillar-right {}
+
+    .pillar-lead {
+      font-size: 0.95rem;
+      line-height: 1.65;
+      color: var(--text);
+      margin-bottom: 1rem;
+      font-weight: 400;
+    }
+
+    .pillar-body {
+      font-size: 0.875rem;
+      line-height: 1.7;
+      color: var(--muted);
+    }
+
+    .pillar-points {
+      margin-top: 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.6rem;
+    }
+
+    .pillar-point {
+      display: flex;
+      gap: 0.6rem;
+      font-size: 0.85rem;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    .pillar-point-dot {
+      flex-shrink: 0;
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      margin-top: 0.55em;
+    }
+
+    .dot-solar   { background: var(--solar); }
+    .dot-connect { background: var(--grid); }
+    .dot-design  { background: #f472b6; }
+    .dot-learn   { background: var(--battery); }
+    .dot-open    { background: var(--load); }
+
+    /* ── Live link bar ── */
+    .live-links {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-top: 1.25rem;
+    }
+
+    .live-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      padding: 0.3rem 0.7rem;
+      border-radius: 6px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      text-decoration: none;
+      border: 1px solid var(--border);
+      color: var(--muted);
+      background: var(--surface2);
+      transition: color 0.15s, border-color 0.15s;
+    }
+
+    .live-link:hover { color: var(--text); border-color: #484f58; }
+
+    .live-dot {
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.35; }
+    }
+
+    /* ── Closing statement ── */
+    .closing {
+      margin-top: 3rem;
+      padding: 2rem 2.5rem;
+      background: linear-gradient(135deg, rgba(245,158,11,0.07) 0%, rgba(167,139,250,0.07) 100%);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      font-size: 1rem;
+      line-height: 1.7;
+      color: var(--muted);
+      font-style: italic;
+    }
+
+    .closing strong {
+      color: var(--text);
+      font-style: normal;
+    }
+
+    /* ── Responsive ── */
+    @media (max-width: 680px) {
+      nav { padding: 0 1rem; }
+      main { padding: 2rem 1rem 4rem; }
+      .pillar { grid-template-columns: 1fr; gap: 1rem; }
+    }
+  </style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-brand">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>
+      <polyline points="9 22 9 12 15 12 15 22"/>
+    </svg>
+    Norney Farm Bungalow
+  </div>
+  <ul class="nav-links">
+    <li><a href="index.html" class="active">Home</a></li>
+    <li><a href="solar.html">Solar</a></li>
+    <li><a href="energy.html">Energy</a></li>
+    <li><a href="weather.html">Weather</a></li>
+    <li><a href="#" style="opacity:0.4;pointer-events:none">History</a></li>
+  </ul>
+</nav>
+
+<main>
+
+  <div class="hero">
+    <div class="hero-eyebrow">Norney Farm · GU8 6AE · Surrey</div>
+    <h1>A 1970s bungalow reimagined as a self-sufficient home</h1>
+    <p>
+      Powered by the sun. Informed by data. Designed with intention. Built to be shared.
+      Norney is not a private renovation project — it is a working demonstration that
+      anyone can learn from and adapt for their own place.
+    </p>
+    <div class="principles">
+      <span class="principle-tag pt-solar">☀️ Off-grid by design</span>
+      <span class="principle-tag pt-connect">🌐 Connected intelligence</span>
+<span class="principle-tag pt-learn">🧠 Living learning environment</span>
+      <span class="principle-tag pt-open">🔓 Open Norney</span>
+    </div>
+  </div>
+
+  <!-- Site map -->
+  <div class="map-section">
+    <div class="map-label">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+      Norney Farm · GU8 6AE · Surrey
+    </div>
+    <div id="site-map"></div>
+  </div>
+
+  <!-- Pillar 1: Off-grid -->
+  <div class="pillar">
+    <div class="pillar-left">
+      <span class="pillar-icon">☀️</span>
+      <div class="pillar-number">Principle 01</div>
+      <div class="pillar-title pillar-title-solar">Off-Grid<br>by Design</div>
+    </div>
+    <div class="pillar-right">
+      <div class="pillar-lead">
+        Not solar panels as a cost-saving measure — the home as an energy-generating node.
+        The battery is the home's independence buffer. The grid is a backup, not a dependency.
+      </div>
+      <div class="pillar-points">
+        <div class="pillar-point">
+          <div class="pillar-point-dot dot-solar"></div>
+          <div>Battery-first thinking: a 10–20 kWh LFP bank stores surplus, smooths demand, and enables genuine off-peak intelligence via Octopus Flux.</div>
+        </div>
+        <div class="pillar-point">
+          <div class="pillar-point-dot dot-solar"></div>
+          <div>A seasonal energy rhythm — solar abundance in summer tracks the growing calendar; winter draws on stored energy and selective grid import.</div>
+        </div>
+        <div class="pillar-point">
+          <div class="pillar-point-dot dot-solar"></div>
+          <div>Making the invisible visible: live generation and consumption displayed in the home itself, not buried in an app. Energy literacy as a daily practice.</div>
+        </div>
+        <div class="pillar-point">
+          <div class="pillar-point-dot dot-solar"></div>
+          <div>Future ambition: rainwater harvesting and greywater recycling as natural companions — energy autonomy extended to water.</div>
+        </div>
+      </div>
+      <div class="live-links">
+        <a class="live-link" href="solar.html"><span class="live-dot" style="background:var(--solar)"></span>Live solar dashboard</a>
+        <a class="live-link" href="energy.html"><span class="live-dot" style="background:var(--battery)"></span>Energy & tariff</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Pillar 2: Connected intelligence -->
+  <div class="pillar">
+    <div class="pillar-left">
+      <span class="pillar-icon">🌐</span>
+      <div class="pillar-number">Principle 02</div>
+      <div class="pillar-title pillar-title-connect">Connected<br>Intelligence</div>
+    </div>
+    <div class="pillar-right">
+      <div class="pillar-lead">
+        The home as a data-sensing environment. Weather, energy, soil, wildlife — each system
+        produces signal. The farm becomes a live demonstration node where physical and digital
+        are deliberately woven together.
+      </div>
+      <div class="pillar-points">
+        <div class="pillar-point">
+          <div class="pillar-point-dot dot-connect"></div>
+          <div>Local weather station data feeds both this dashboard and external citizen science networks (Met Office WOW, iNaturalist).</div>
+        </div>
+        <div class="pillar-point">
+          <div class="pillar-point-dot dot-connect"></div>
+          <div>A digital-physical interface principle: data from the farm surfaces naturally at home — not locked in a cloud console, but ambient and readable.</div>
+        </div>
+        <div class="pillar-point">
+          <div class="pillar-point-dot dot-connect"></div>
+          <div>Robust rural connectivity (Starlink, mesh WiFi) as infrastructure — not luxury — for a working demonstration site.</div>
+        </div>
+        <div class="pillar-point">
+          <div class="pillar-point-dot dot-connect"></div>
+          <div>Open data contribution: the home participates in shared knowledge, not just consumes it.</div>
+        </div>
+      </div>
+      <div class="live-links">
+        <a class="live-link" href="weather.html"><span class="live-dot" style="background:var(--grid)"></span>Weather & climate data</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Pillar 4: Learning -->
+  <div class="pillar">
+    <div class="pillar-left">
+      <span class="pillar-icon">🧠</span>
+      <div class="pillar-number">Principle 03</div>
+      <div class="pillar-title pillar-title-learn">Living Learning<br>Environment</div>
+    </div>
+    <div class="pillar-right">
+      <div class="pillar-lead">
+        Every system in the home has a reflective dimension. Energy monitoring teaches
+        energy literacy. The kitchen garden teaches soil. Each space is mapped to a practice,
+        and each practice deepens understanding.
+      </div>
+      <div class="pillar-points">
+        <div class="pillar-point">
+          <div class="pillar-point-dot dot-learn"></div>
+          <div>Learning nodes by space: the sanctuary corner for music and stillness; the kitchen garden for growing knowledge.</div>
+        </div>
+        <div class="pillar-point">
+          <div class="pillar-point-dot dot-learn"></div>
+          <div>The home as a self-teaching system — decisions tracked, outcomes measured, understanding updated. Not set-and-forget, but evolving.</div>
+        </div>
+        <div class="pillar-point">
+          <div class="pillar-point-dot dot-learn"></div>
+          <div>Data as teacher: the charts on this dashboard are not just reporting — they change behaviour. Winter energy patterns, frost days, wind seasons — all of it feeds back into how the home is run.</div>
+        </div>
+        <div class="pillar-point">
+          <div class="pillar-point-dot dot-learn"></div>
+          <div>The learning-expansion model: skills developed here — growing, building, understanding systems — compound. The home is a platform for that compounding.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Pillar 5: Open source -->
+  <div class="pillar">
+    <div class="pillar-left">
+      <span class="pillar-icon">🔓</span>
+      <div class="pillar-number">Principle 04</div>
+      <div class="pillar-title pillar-title-open">Open<br>Norney</div>
+    </div>
+    <div class="pillar-right">
+      <div class="pillar-lead">
+        Norney is not a private project. It is a working demonstration that anyone can
+        learn from and adapt for their own home, their own land.
+      </div>
+      <div class="pillar-points">
+        <div class="pillar-point">
+          <div class="pillar-point-dot dot-open"></div>
+          <div>Everything documented and shared: the solar install spec, the kitchen garden layout, this dashboard's code — all reproducible.</div>
+        </div>
+        <div class="pillar-point">
+          <div class="pillar-point-dot dot-open"></div>
+          <div>A version history for the home itself — what decisions were made, why, what the outcomes were. Others can fork the model.</div>
+        </div>
+        <div class="pillar-point">
+          <div class="pillar-point-dot dot-open"></div>
+          <div>This dashboard runs on a simple Python proxy and a browser. No cloud account required, no vendor lock-in. Minimal dependencies by design.</div>
+        </div>
+        <div class="pillar-point">
+          <div class="pillar-point-dot dot-open"></div>
+          <div>Norney as proof-of-concept for regenerative rural living — a model that community and land organisations can adapt, not just admire.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="closing">
+    <strong>Norney is not a finished thing.</strong> It is a 1970s bungalow being slowly, deliberately remade —
+    one system at a time, with data as the guide and openness as the discipline.
+    If you are doing something similar, or want to, the door is open.
+  </div>
+
+</main>
+
+<script>
+  // Define British National Grid (EPSG:27700) projection
+  proj4.defs('EPSG:27700', '+proj=tmerc +lat_0=49 +lon_0=-2 +k=0.9996012717 +x_0=400000 +y_0=-100000 +ellps=airy +datum=OSGB36 +units=m +no_defs');
+
+  // Convert BNG coordinate pair → [lng, lat] (GeoJSON order)
+  function bngToLatLng(e, n) {
+    return proj4('EPSG:27700', 'WGS84', [e, n]); // proj4 returns [lng, lat] already
+  }
+
+  // Reproject a GeoJSON geometry's coordinates from BNG to WGS84
+  function reprojectCoords(coords) {
+    if (typeof coords[0] === 'number') return bngToLatLng(coords[0], coords[1]);
+    return coords.map(reprojectCoords);
+  }
+
+  function reprojectGeojson(geojson) {
+    return {
+      ...geojson,
+      features: geojson.features.map(f => ({
+        ...f,
+        geometry: { ...f.geometry, coordinates: reprojectCoords(f.geometry.coordinates) }
+      }))
+    };
+  }
+
+  // Initialise map
+  const map = L.map('site-map', { zoomControl: true, attributionControl: true });
+
+  // Esri World Imagery (aerial) — maxNativeZoom:18 avoids "no data" tiles at 19+
+  L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+    attribution: 'Imagery © Esri · OS MasterMap © Crown copyright',
+    maxZoom: 20,
+    maxNativeZoom: 18,
+  }).addTo(map);
+
+  // Esri labels overlay (roads / place names on top of imagery)
+  L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}', {
+    maxZoom: 20,
+    maxNativeZoom: 18,
+    opacity: 0.6,
+  }).addTo(map);
+
+  // Load and render the site GeoJSON
+  fetch('/norney-farm.geojson')
+    .then(r => r.json())
+    .then(raw => {
+      const geojson = reprojectGeojson(raw);
+      const layer = L.geoJSON(geojson, {
+        style: feat => {
+          const group = (feat.properties.descriptivegroup || []).join('');
+          return group.includes('Building')
+            ? { color: '#f59e0b', weight: 2.5, fillColor: '#f59e0b', fillOpacity: 0.5 }
+            : { color: '#10b981', weight: 2, fillColor: '#10b981', fillOpacity: 0.25, dashArray: '4 3' };
+        }
+      }).addTo(map);
+      // Fit with generous padding so surrounding context is visible
+      map.fitBounds(layer.getBounds(), { padding: [80, 80], maxZoom: 18 });
+    })
+    .catch(err => console.warn('GeoJSON load failed', err));
+</script>
+
+</body>
+</html>

@@ -1,0 +1,1121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Norney Farm Bungalow</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <script src="config.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0d1117;
+      --surface: #161b22;
+      --surface2: #1f2937;
+      --border: #30363d;
+      --text: #e6edf3;
+      --muted: #8b949e;
+      --solar: #f59e0b;
+      --solar-dim: rgba(245,158,11,0.15);
+      --battery: #10b981;
+      --battery-dim: rgba(16,185,129,0.15);
+      --grid: #3b82f6;
+      --grid-dim: rgba(59,130,246,0.15);
+      --load: #a78bfa;
+      --load-dim: rgba(167,139,250,0.15);
+      --export: #34d399;
+      --radius: 12px;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    /* ── Nav ── */
+    nav {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: rgba(13,17,23,0.85);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      padding: 0 2rem;
+      display: flex;
+      align-items: center;
+      height: 60px;
+      gap: 2rem;
+    }
+
+    .nav-brand {
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: var(--text);
+      white-space: nowrap;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .nav-brand svg { opacity: 0.8; }
+
+    .nav-links {
+      display: flex;
+      gap: 0.25rem;
+      list-style: none;
+    }
+
+    .nav-links a {
+      display: block;
+      padding: 0.4rem 0.9rem;
+      border-radius: 6px;
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: var(--muted);
+      text-decoration: none;
+      transition: color 0.15s, background 0.15s;
+    }
+
+    .nav-links a:hover { color: var(--text); background: var(--surface2); }
+    .nav-links a.active { color: var(--solar); background: var(--solar-dim); }
+
+    .nav-status {
+      margin-left: auto;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.8rem;
+      color: var(--muted);
+    }
+
+    .status-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--battery);
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+
+    /* ── Layout ── */
+    main {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 2.5rem 2rem 4rem;
+    }
+
+    /* ── Page header ── */
+    .page-header {
+      margin-bottom: 2rem;
+    }
+
+    .page-header h1 {
+      font-size: 1.75rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+
+    .page-header p {
+      color: var(--muted);
+      font-size: 0.875rem;
+      margin-top: 0.25rem;
+    }
+
+    .last-updated {
+      font-size: 0.8rem;
+      color: var(--muted);
+      margin-top: 0.5rem;
+    }
+
+    /* ── Hero stat ── */
+    .hero {
+      background: linear-gradient(135deg, rgba(245,158,11,0.12) 0%, rgba(245,158,11,0.03) 100%);
+      border: 1px solid rgba(245,158,11,0.25);
+      border-radius: var(--radius);
+      padding: 2rem 2.5rem;
+      margin-bottom: 1.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 2rem;
+    }
+
+    .hero-label {
+      font-size: 0.8rem;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--solar);
+      margin-bottom: 0.5rem;
+    }
+
+    .hero-value {
+      font-size: 4rem;
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      line-height: 1;
+      color: var(--text);
+    }
+
+    .hero-value span {
+      font-size: 1.5rem;
+      font-weight: 400;
+      color: var(--muted);
+      margin-left: 0.25rem;
+    }
+
+    .hero-sub {
+      color: var(--muted);
+      font-size: 0.875rem;
+      margin-top: 0.5rem;
+    }
+
+    .hero-icon {
+      opacity: 0.3;
+      flex-shrink: 0;
+    }
+
+    /* ── Stat cards grid ── */
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.25rem 1.5rem;
+      transition: border-color 0.2s;
+    }
+
+    .card:hover { border-color: #484f58; }
+
+    .card-label {
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 0.75rem;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    .card-label .dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .card-value {
+      font-size: 2rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      line-height: 1;
+    }
+
+    .card-unit {
+      font-size: 0.9rem;
+      font-weight: 400;
+      color: var(--muted);
+      margin-left: 0.2rem;
+    }
+
+    .card-sub {
+      font-size: 0.78rem;
+      color: var(--muted);
+      margin-top: 0.5rem;
+    }
+
+    .card-bar {
+      height: 4px;
+      background: var(--border);
+      border-radius: 2px;
+      margin-top: 0.75rem;
+      overflow: hidden;
+    }
+
+    .card-bar-fill {
+      height: 100%;
+      border-radius: 2px;
+      transition: width 1s ease;
+    }
+
+    /* ── Energy flow ── */
+    .flow-section {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.75rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .section-title {
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 1.5rem;
+    }
+
+    .flow-grid {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr auto 1fr;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .flow-node {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1rem;
+      text-align: center;
+    }
+
+    .flow-node-label {
+      font-size: 0.7rem;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 0.4rem;
+    }
+
+    .flow-node-value {
+      font-size: 1.4rem;
+      font-weight: 700;
+    }
+
+    .flow-node-unit {
+      font-size: 0.75rem;
+      color: var(--muted);
+    }
+
+    .flow-arrow {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.2rem;
+      color: var(--muted);
+    }
+
+    .flow-arrow svg { opacity: 0.5; }
+
+    .flow-arrow-label {
+      font-size: 0.65rem;
+      font-weight: 500;
+      color: var(--muted);
+      text-align: center;
+    }
+
+    /* ── Chart ── */
+    .chart-section {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.75rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .chart-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 1.5rem;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+
+    .chart-legend {
+      display: flex;
+      gap: 1.25rem;
+      flex-wrap: wrap;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      font-size: 0.78rem;
+      color: var(--muted);
+    }
+
+    .legend-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 2px;
+      flex-shrink: 0;
+    }
+
+    .chart-container {
+      position: relative;
+      height: 260px;
+    }
+
+    /* ── Equipment ── */
+    .equipment-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 1rem;
+    }
+
+    .equipment-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.25rem;
+    }
+
+    .equipment-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 0.75rem;
+      font-size: 1.1rem;
+    }
+
+    .equipment-name {
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    .equipment-model {
+      font-size: 0.78rem;
+      color: var(--muted);
+      margin-top: 0.2rem;
+    }
+
+    .equipment-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+      margin-top: 0.6rem;
+      padding: 0.2rem 0.5rem;
+      border-radius: 4px;
+      font-size: 0.7rem;
+      font-weight: 600;
+    }
+
+    .badge-online { background: var(--battery-dim); color: var(--battery); }
+    .badge-fw { background: var(--surface2); color: var(--muted); }
+
+    /* ── Loading skeleton ── */
+    .skeleton {
+      background: linear-gradient(90deg, var(--surface2) 25%, var(--border) 50%, var(--surface2) 75%);
+      background-size: 200% 100%;
+      animation: shimmer 1.5s infinite;
+      border-radius: 4px;
+      display: inline-block;
+    }
+
+    @keyframes shimmer {
+      0% { background-position: 200% 0; }
+      100% { background-position: -200% 0; }
+    }
+
+    /* ── Export badge ── */
+    .export-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+      padding: 0.15rem 0.5rem;
+      border-radius: 4px;
+      font-size: 0.72rem;
+      font-weight: 600;
+      background: rgba(52,211,153,0.15);
+      color: #34d399;
+    }
+
+    /* ── Day tabs ── */
+    .day-tabs {
+      display: flex;
+      gap: 0.25rem;
+    }
+
+    .day-tab {
+      background: none;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--muted);
+      cursor: pointer;
+      font-size: 0.78rem;
+      font-weight: 500;
+      padding: 0.3rem 0.7rem;
+      transition: all 0.15s;
+    }
+
+    .day-tab:hover { color: var(--text); border-color: #484f58; }
+    .day-tab.active { background: var(--solar-dim); border-color: rgba(245,158,11,0.4); color: var(--solar); }
+
+    /* ── Responsive ── */
+    @media (max-width: 700px) {
+      nav { padding: 0 1rem; }
+      main { padding: 1.5rem 1rem 3rem; }
+      .hero { flex-direction: column; gap: 1rem; }
+      .hero-value { font-size: 3rem; }
+      .flow-grid { grid-template-columns: 1fr; }
+      .flow-arrow { display: none; }
+    }
+
+    /* colour helpers */
+    .c-solar { color: var(--solar); }
+    .c-battery { color: var(--battery); }
+    .c-grid { color: var(--grid); }
+    .c-load { color: var(--load); }
+    .c-muted { color: var(--muted); }
+  </style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-brand">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>
+      <polyline points="9 22 9 12 15 12 15 22"/>
+    </svg>
+    Norney Farm Bungalow
+  </div>
+  <ul class="nav-links">
+    <li><a href="index.html">Home</a></li>
+    <li><a href="solar.html" class="active">Solar</a></li>
+    <li><a href="energy.html">Energy</a></li>
+    <li><a href="weather.html">Weather</a></li>
+    <li><a href="#" style="opacity:0.4;pointer-events:none">History</a></li>
+  </ul>
+  <div class="nav-status">
+    <div class="status-dot" id="statusDot"></div>
+    <span id="statusText">Connecting…</span>
+  </div>
+</nav>
+
+<main>
+
+  <div class="page-header">
+    <h1>☀️ Solar Dashboard</h1>
+    <p>SmartSolar MPPT VE.Can 250/100 · Pylontech US2000 · MultiPlus-II 48/5000</p>
+    <div class="last-updated">Last updated: <span id="lastUpdated">—</span></div>
+  </div>
+
+  <!-- Hero -->
+  <div class="hero">
+    <div>
+      <div class="hero-label">Solar Output Now</div>
+      <div class="hero-value" id="heroSolar">
+        <span class="skeleton" style="width:120px;height:52px;vertical-align:middle"></span>
+      </div>
+      <div class="hero-sub" id="heroSub">Loading live data…</div>
+    </div>
+    <svg class="hero-icon" width="96" height="96" viewBox="0 0 24 24" fill="var(--solar)" stroke="none">
+      <circle cx="12" cy="12" r="5"/>
+      <line x1="12" y1="1" x2="12" y2="3" stroke="var(--solar)" stroke-width="2" stroke-linecap="round"/>
+      <line x1="12" y1="21" x2="12" y2="23" stroke="var(--solar)" stroke-width="2" stroke-linecap="round"/>
+      <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" stroke="var(--solar)" stroke-width="2" stroke-linecap="round"/>
+      <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" stroke="var(--solar)" stroke-width="2" stroke-linecap="round"/>
+      <line x1="1" y1="12" x2="3" y2="12" stroke="var(--solar)" stroke-width="2" stroke-linecap="round"/>
+      <line x1="21" y1="12" x2="23" y2="12" stroke="var(--solar)" stroke-width="2" stroke-linecap="round"/>
+      <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" stroke="var(--solar)" stroke-width="2" stroke-linecap="round"/>
+      <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" stroke="var(--solar)" stroke-width="2" stroke-linecap="round"/>
+    </svg>
+  </div>
+
+  <!-- Stat cards -->
+  <div class="cards">
+    <div class="card">
+      <div class="card-label"><div class="dot" style="background:var(--solar)"></div>Yield Today</div>
+      <div class="card-value c-solar" id="yieldToday">—<span class="card-unit">kWh</span></div>
+      <div class="card-sub" id="yieldYesterday">Yesterday: —</div>
+    </div>
+    <div class="card">
+      <div class="card-label"><div class="dot" style="background:var(--battery)"></div>Battery</div>
+      <div class="card-value c-battery" id="batteryPct">—<span class="card-unit">%</span></div>
+      <div class="card-bar"><div class="card-bar-fill" id="batteryBar" style="background:var(--battery);width:0%"></div></div>
+      <div class="card-sub" id="batteryDetail">—</div>
+    </div>
+    <div class="card">
+      <div class="card-label"><div class="dot" style="background:var(--grid)"></div>Grid</div>
+      <div class="card-value" id="gridPower" style="color:var(--grid)">—<span class="card-unit">W</span></div>
+      <div class="card-sub" id="gridSub">—</div>
+    </div>
+    <div class="card">
+      <div class="card-label"><div class="dot" style="background:var(--load)"></div>Total Load</div>
+      <div class="card-value c-load" id="totalLoad">—<span class="card-unit">W</span></div>
+      <div class="card-sub" id="loadSub">—</div>
+    </div>
+  </div>
+
+  <!-- Energy flow -->
+  <div class="flow-section">
+    <div class="section-title">Energy Flow</div>
+    <div class="flow-grid">
+      <div class="flow-node">
+        <div class="flow-node-label">☀️ Solar</div>
+        <div class="flow-node-value c-solar" id="flowSolar">—</div>
+        <div class="flow-node-unit">W</div>
+      </div>
+      <div class="flow-arrow">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="9 18 15 12 9 6"/>
+        </svg>
+        <div class="flow-arrow-label" id="flowArrow1Label">—</div>
+      </div>
+      <div class="flow-node">
+        <div class="flow-node-label">🔋 Battery</div>
+        <div class="flow-node-value c-battery" id="flowBattery">—</div>
+        <div class="flow-node-unit">%</div>
+        <div style="font-size:0.75rem;color:var(--muted);margin-top:0.2rem" id="flowBatteryW">—</div>
+      </div>
+      <div class="flow-arrow">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="9 18 15 12 9 6"/>
+        </svg>
+        <div class="flow-arrow-label" id="flowArrow2Label">—</div>
+      </div>
+      <div class="flow-node">
+        <div class="flow-node-label">🏠 House</div>
+        <div class="flow-node-value c-load" id="flowLoad">—</div>
+        <div class="flow-node-unit">W</div>
+        <div style="font-size:0.75rem;color:var(--muted);margin-top:0.2rem" id="flowGrid">—</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Production chart -->
+  <div class="chart-section">
+    <div class="chart-header">
+      <div>
+        <div class="section-title" style="margin-bottom:0.5rem">Production History</div>
+        <div class="day-tabs" id="dayTabs">
+          <button class="day-tab active" data-days="0">Today</button>
+          <button class="day-tab" data-days="1">Yesterday</button>
+          <button class="day-tab" data-days="7">7 Days</button>
+          <button class="day-tab" data-days="30">30 Days</button>
+        </div>
+      </div>
+      <div class="chart-legend">
+        <div class="legend-item"><div class="legend-dot" style="background:var(--solar)"></div>Solar kWh</div>
+        <div class="legend-item"><div class="legend-dot" style="background:var(--battery)"></div>Battery %</div>
+        <div class="legend-item"><div class="legend-dot" style="background:var(--load)"></div>Consumption kWh</div>
+      </div>
+    </div>
+    <div class="chart-container">
+      <canvas id="solarChart"></canvas>
+    </div>
+  </div>
+
+  <!-- Energy sources -->
+  <div class="chart-section">
+    <div class="chart-header">
+      <div>
+        <div class="section-title" style="margin-bottom:0.25rem">Where does my power come from?</div>
+        <div style="font-size:0.78rem;color:var(--muted);margin-bottom:0.5rem">Stacked = what powered the house each slot. Grid draw is usually the ESS 25W setpoint Victron keeps for stability.</div>
+      </div>
+      <div class="chart-legend">
+        <div class="legend-item"><div class="legend-dot" style="background:var(--solar)"></div>Solar → loads</div>
+        <div class="legend-item"><div class="legend-dot" style="background:var(--battery)"></div>Battery → loads</div>
+        <div class="legend-item"><div class="legend-dot" style="background:var(--grid)"></div>Grid import</div>
+        <div class="legend-item"><div class="legend-dot" style="background:rgba(255,255,255,0.25)"></div>Total consumption</div>
+      </div>
+    </div>
+    <div class="chart-container">
+      <canvas id="sourcesChart"></canvas>
+    </div>
+  </div>
+
+  <!-- Grid export -->
+  <div class="chart-section">
+    <div class="chart-header">
+      <div>
+        <div class="section-title" style="margin-bottom:0.25rem">Grid Export</div>
+        <div style="font-size:0.78rem;color:var(--muted);margin-bottom:0.5rem">Energy sent to the grid each slot — surplus solar and battery that couldn't be used in the house.</div>
+      </div>
+      <div class="chart-legend">
+        <div class="legend-item"><div class="legend-dot" style="background:var(--export)"></div>Exported kWh</div>
+        <div class="legend-item"><div class="legend-dot" style="background:var(--solar)"></div>Solar generated</div>
+      </div>
+    </div>
+    <div class="chart-container">
+      <canvas id="exportChart"></canvas>
+    </div>
+  </div>
+
+  <!-- Equipment -->
+  <div class="section-title">Equipment</div>
+  <div class="equipment-grid">
+    <div class="equipment-card">
+      <div class="equipment-icon" style="background:var(--solar-dim)">⚡</div>
+      <div class="equipment-name">Solar Charger</div>
+      <div class="equipment-model">SmartSolar MPPT VE.Can 250/100 rev2</div>
+      <div><span class="equipment-badge badge-online">● Online</span> <span class="equipment-badge badge-fw">v3.18</span></div>
+    </div>
+    <div class="equipment-card">
+      <div class="equipment-icon" style="background:var(--battery-dim)">🔋</div>
+      <div class="equipment-name">Battery</div>
+      <div class="equipment-model">Pylontech US2000</div>
+      <div><span class="equipment-badge badge-online">● Online</span></div>
+    </div>
+    <div class="equipment-card">
+      <div class="equipment-icon" style="background:var(--grid-dim)">🔌</div>
+      <div class="equipment-name">Inverter/Charger</div>
+      <div class="equipment-model">MultiPlus-II 48/5000/70-50</div>
+      <div><span class="equipment-badge badge-online">● Online</span> <span class="equipment-badge badge-fw">fw 560</span></div>
+    </div>
+    <div class="equipment-card">
+      <div class="equipment-icon" style="background:var(--load-dim)">📡</div>
+      <div class="equipment-name">Gateway</div>
+      <div class="equipment-model">Cerbo GX MK2</div>
+      <div><span class="equipment-badge badge-online">● Online</span> <span class="equipment-badge badge-fw">v3.73</span></div>
+    </div>
+    <div class="equipment-card">
+      <div class="equipment-icon" style="background:rgba(99,102,241,0.15)">⚡</div>
+      <div class="equipment-name">Grid Meter</div>
+      <div class="equipment-model">Energy Meter VM-3P75CT</div>
+      <div><span class="equipment-badge badge-online">● Online</span> <span class="equipment-badge badge-fw">v1.11</span></div>
+    </div>
+  </div>
+
+</main>
+
+<script>
+  const SITE_ID = 948642;
+  const BASE = PROXY_BASE + '/api';
+
+  const headers = {
+    'Content-Type': 'application/json'
+  };
+
+  function fmt(v, dec = 0) {
+    if (v === null || v === undefined) return '—';
+    return Number(v).toFixed(dec);
+  }
+
+  let chart = null;
+  let sourcesChart = null;
+  let exportChart = null;
+
+  const chartDefaults = {
+    responsive: true,
+    maintainAspectRatio: false,
+    interaction: { mode: 'index', intersect: false },
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        backgroundColor: '#1f2937', borderColor: '#30363d', borderWidth: 1,
+        titleColor: '#e6edf3', bodyColor: '#8b949e', padding: 10,
+      }
+    }
+  };
+
+  function initChart(labels, solar, battery, consumption) {
+    const ctx = document.getElementById('solarChart').getContext('2d');
+    if (chart) chart.destroy();
+    chart = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels,
+        datasets: [
+          {
+            label: 'Solar kWh',
+            data: solar,
+            backgroundColor: 'rgba(245,158,11,0.7)',
+            borderWidth: 0, borderRadius: 3, yAxisID: 'y',
+          },
+          {
+            label: 'Consumption kWh',
+            data: consumption,
+            type: 'line',
+            borderColor: 'rgba(167,139,250,1)',
+            backgroundColor: 'rgba(167,139,250,0.1)',
+            borderWidth: 2, pointRadius: 0, pointHoverRadius: 4,
+            tension: 0.4, fill: true, yAxisID: 'y',
+          },
+          {
+            label: 'Battery %',
+            data: battery,
+            type: 'line',
+            borderColor: 'rgba(16,185,129,0.9)',
+            backgroundColor: 'transparent',
+            borderWidth: 2, pointRadius: 0, pointHoverRadius: 4,
+            tension: 0.4, fill: false, yAxisID: 'y2',
+          }
+        ]
+      },
+      options: {
+        ...chartDefaults,
+        scales: {
+          x: { grid: { color: 'rgba(48,54,61,0.5)' }, ticks: { color: '#8b949e', font: { size: 11 }, maxTicksLimit: 12 } },
+          y: {
+            position: 'left', grid: { color: 'rgba(48,54,61,0.5)' },
+            ticks: { color: '#8b949e', font: { size: 11 } },
+            title: { display: true, text: 'kWh', color: '#8b949e', font: { size: 11 } }
+          },
+          y2: {
+            position: 'right', min: 0, max: 100,
+            grid: { drawOnChartArea: false },
+            ticks: { color: '#10b981', font: { size: 11 }, callback: v => v + '%' },
+          }
+        }
+      }
+    });
+  }
+
+  function initSourcesChart(labels, solarToLoad, battDisch, gridImport, consumption) {
+    const ctx = document.getElementById('sourcesChart').getContext('2d');
+    if (sourcesChart) sourcesChart.destroy();
+    sourcesChart = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels,
+        datasets: [
+          {
+            label: 'Solar → loads',
+            data: solarToLoad,
+            backgroundColor: 'rgba(245,158,11,0.75)',
+            borderWidth: 0, borderRadius: 0, stack: 'src', yAxisID: 'y',
+          },
+          {
+            label: 'Battery → loads',
+            data: battDisch,
+            backgroundColor: 'rgba(16,185,129,0.75)',
+            borderWidth: 0, borderRadius: 0, stack: 'src', yAxisID: 'y',
+          },
+          {
+            label: 'Grid import',
+            data: gridImport,
+            backgroundColor: 'rgba(59,130,246,0.75)',
+            borderWidth: 0, borderRadius: 3, stack: 'src', yAxisID: 'y',
+          },
+          {
+            label: 'Total consumption',
+            data: consumption,
+            type: 'line',
+            borderColor: 'rgba(255,255,255,0.35)',
+            backgroundColor: 'transparent',
+            borderWidth: 1.5, borderDash: [4, 3],
+            pointRadius: 0, pointHoverRadius: 3,
+            tension: 0.4, fill: false, yAxisID: 'y',
+          }
+        ]
+      },
+      options: {
+        ...chartDefaults,
+        plugins: {
+          ...chartDefaults.plugins,
+          tooltip: {
+            ...chartDefaults.plugins.tooltip,
+            callbacks: {
+              label: item => {
+                const v = item.raw;
+                if (v === null) return null;
+                if (item.dataset.label === 'Total consumption') return ` Total: ${(v*1000).toFixed(0)} Wh`;
+                return ` ${item.dataset.label}: ${(v*1000).toFixed(0)} Wh`;
+              }
+            }
+          }
+        },
+        scales: {
+          x: { stacked: true, grid: { color: 'rgba(48,54,61,0.5)' }, ticks: { color: '#8b949e', font: { size: 11 }, maxTicksLimit: 12 } },
+          y: {
+            stacked: true, position: 'left', grid: { color: 'rgba(48,54,61,0.5)' },
+            ticks: { color: '#8b949e', font: { size: 11 }, callback: v => (v*1000).toFixed(0) + ' Wh' },
+            title: { display: true, text: 'Wh per slot', color: '#8b949e', font: { size: 11 } }
+          }
+        }
+      }
+    });
+  }
+
+  function initExportChart(labels, exported, solar) {
+    const ctx = document.getElementById('exportChart').getContext('2d');
+    if (exportChart) exportChart.destroy();
+    exportChart = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels,
+        datasets: [
+          {
+            label: 'Exported kWh',
+            data: exported,
+            backgroundColor: 'rgba(52,211,153,0.7)',
+            borderWidth: 0, borderRadius: 3, yAxisID: 'y',
+          },
+          {
+            label: 'Solar generated',
+            data: solar,
+            type: 'line',
+            borderColor: 'rgba(245,158,11,0.7)',
+            backgroundColor: 'transparent',
+            borderWidth: 2, pointRadius: 0, pointHoverRadius: 4,
+            tension: 0.4, fill: false, yAxisID: 'y',
+          }
+        ]
+      },
+      options: {
+        ...chartDefaults,
+        plugins: {
+          ...chartDefaults.plugins,
+          tooltip: {
+            ...chartDefaults.plugins.tooltip,
+            callbacks: {
+              label: item => {
+                const v = item.raw;
+                if (v === null) return null;
+                return ` ${item.dataset.label}: ${(v * 1000).toFixed(0)} Wh`;
+              }
+            }
+          }
+        },
+        scales: {
+          x: { grid: { color: 'rgba(48,54,61,0.5)' }, ticks: { color: '#8b949e', font: { size: 11 }, maxTicksLimit: 12 } },
+          y: {
+            position: 'left', min: 0, grid: { color: 'rgba(48,54,61,0.5)' },
+            ticks: { color: '#8b949e', font: { size: 11 }, callback: v => (v * 1000).toFixed(0) + ' Wh' },
+            title: { display: true, text: 'Wh per slot', color: '#8b949e', font: { size: 11 } }
+          }
+        }
+      }
+    });
+  }
+
+  // Each series is an array of [timestamp_ms, value] pairs
+  function alignSeries(seriesMap) {
+    // Collect all unique timestamps across all series
+    const tsSet = new Set();
+    for (const pts of Object.values(seriesMap)) {
+      for (const [ts] of pts) tsSet.add(ts);
+    }
+    const timestamps = [...tsSet].sort((a, b) => a - b);
+
+    const aligned = {};
+    for (const [key, pts] of Object.entries(seriesMap)) {
+      const map = new Map(pts.map(([ts, v]) => [ts, v]));
+      aligned[key] = timestamps.map(ts => map.has(ts) ? map.get(ts) : null);
+    }
+    return { timestamps, aligned };
+  }
+
+  async function fetchStats(daysBack = 0) {
+    const now = Math.floor(Date.now() / 1000);
+    let start, interval, labelFmt;
+
+    if (daysBack <= 1) {
+      // Single day: midnight → now (or full previous day)
+      const d = new Date();
+      d.setDate(d.getDate() - daysBack);
+      d.setHours(0, 0, 0, 0);
+      start = Math.floor(d.getTime() / 1000);
+      const end = daysBack === 0 ? now : start + 86400;
+      interval = '15mins';
+      labelFmt = ts => new Date(ts).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+      return _doFetch(start, end, interval, labelFmt);
+    } else {
+      // Multi-day: go back N days from midnight today
+      const d = new Date();
+      d.setDate(d.getDate() - daysBack);
+      d.setHours(0, 0, 0, 0);
+      start = Math.floor(d.getTime() / 1000);
+      interval = daysBack <= 7 ? 'hours' : 'days';
+      labelFmt = ts => {
+        const dt = new Date(ts);
+        return daysBack <= 7
+          ? dt.toLocaleDateString('en-GB', { weekday: 'short', hour: '2-digit', minute: '2-digit' })
+          : dt.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+      };
+      return _doFetch(start, now, interval, labelFmt);
+    }
+  }
+
+  async function _doFetch(start, end, interval, labelFmt) {
+    try {
+      const url = `${BASE}/installations/${SITE_ID}/stats?type=custom&start=${start}&end=${end}&interval=${interval}&attributeCodes[]=Pdc&attributeCodes[]=SOC&attributeCodes[]=Pc&attributeCodes[]=Pg&attributeCodes[]=Pb`;
+      const r = await fetch(url, { headers });
+      const d = await r.json();
+      if (!d.success || !d.records) return;
+
+      const rec = d.records;
+      const seriesMap = {};
+      if (rec.Pdc?.length) seriesMap.Pdc = rec.Pdc;
+      if (rec.SOC?.length) seriesMap.SOC = rec.SOC;
+      if (rec.Pc?.length)  seriesMap.Pc  = rec.Pc;
+      if (rec.Pg?.length)  seriesMap.Pg  = rec.Pg;
+      if (rec.Pb?.length)  seriesMap.Pb  = rec.Pb;
+
+      if (!Object.keys(seriesMap).length) return;
+
+      const { timestamps, aligned } = alignSeries(seriesMap);
+      const labels = timestamps.map(ts => labelFmt(ts));
+
+      // Convert Pdc from watts → kWh per 15-min interval (W × 0.25h / 1000)
+      const intervalHours = interval === '15mins' ? 0.25 : interval === 'hours' ? 1 : 24;
+      const solar       = (aligned.Pdc || []).map(v => v === null ? null : +(v * intervalHours / 1000).toFixed(3));
+      const battery     = aligned.SOC || [];
+      const consumption = (aligned.Pc  || []).map(v => v === null ? null : +v.toFixed(3));
+      // Pg = grid EXPORT (solar/battery → grid), Pb = battery CHARGING (positive = charging)
+      const solarExport = (aligned.Pg  || []).map(v => v === null ? null : +Math.max(0, v).toFixed(3));
+      const battCharge  = (aligned.Pb  || []).map(v => v === null ? null : +Math.max(0, v).toFixed(3));
+
+      // Solar available to loads = solar generated minus what was exported
+      const solarToLoad = solar.map((s, i) => {
+        if (s === null) return null;
+        const exp = solarExport[i] || 0;
+        const c   = consumption[i] || 0;
+        return +Math.max(0, Math.min(c, s - exp)).toFixed(3);
+      });
+
+      // Remaining load covered by battery discharge
+      const battToLoad = consumption.map((c, i) => {
+        if (c === null) return null;
+        return +Math.max(0, c - (solarToLoad[i] || 0)).toFixed(3);
+      });
+
+      // Grid import is the tiny ESS 25W setpoint Victron holds for stability (~6 Wh per 15-min slot)
+      const gridImport = consumption.map(c => c === null ? null : +(0.006).toFixed(3));
+
+      initChart(labels, solar, battery, consumption);
+      initSourcesChart(labels, solarToLoad, battToLoad, gridImport, consumption);
+      initExportChart(labels, solarExport, solar);
+    } catch (e) {
+      console.warn('Stats fetch failed', e);
+      initChart([], [], [], []);
+    }
+  }
+
+  async function fetchLive() {
+    try {
+      const [solar, diag] = await Promise.all([
+        fetch(`${BASE}/installations/${SITE_ID}/widgets/SolarChargerSummary`, { headers }).then(r => r.json()),
+        fetch(`${BASE}/installations/${SITE_ID}/diagnostics?count=100`, { headers }).then(r => r.json()),
+      ]);
+
+      // Solar charger data
+      const sd = solar.records?.data || {};
+      const pvW = parseFloat(sd['107']?.rawValue || 0);       // Battery watts from solar
+      const yieldToday = parseFloat(sd['94']?.rawValue || 0);
+      const yieldYesterday = parseFloat(sd['96']?.rawValue || 0);
+      const chargeState = sd['85']?.formattedValue || '—';
+      const voltage = parseFloat(sd['81']?.rawValue || 0);
+
+      // Scrape diagnostics for battery SOC, grid, load
+      let soc = null, battV = null, battA = null, battW = null;
+      let gridW = null, acLoadW = null, toGridKwh = null, fromGridKwh = null;
+
+      (diag.records || []).forEach(r => {
+        const code = r.code;
+        const dev  = r.Device || '';
+        if (code === 'SOC'  && dev === 'Battery Monitor') soc      = parseFloat(r.rawValue);
+        if (code === 'V'    && dev === 'Battery Monitor') battV    = parseFloat(r.rawValue);
+        if (code === 'I'    && dev === 'Battery Monitor') battA    = parseFloat(r.rawValue);
+        if (code === 'bp'   && dev === 'System overview') battW    = parseFloat(r.rawValue);
+        if (code === 'g1p'  && dev === 'Grid meter')      gridW    = parseFloat(r.rawValue);
+        if (code === 'a1'   && dev === 'System overview') acLoadW  = parseFloat(r.rawValue);
+        if (code === 'gr'   && dev === 'Grid meter')      toGridKwh   = parseFloat(r.rawValue);
+        if (code === 'gf'   && dev === 'Grid meter')      fromGridKwh = parseFloat(r.rawValue);
+      });
+
+      // Update hero
+      document.getElementById('heroSolar').innerHTML = `${fmt(pvW)}<span>W</span>`;
+      document.getElementById('heroSub').innerHTML = `
+        ${chargeState} · ${fmt(voltage, 1)} V
+        ${gridW !== null && gridW < 0 ? `<span class="export-badge">↑ Exporting surplus</span>` : ''}
+      `;
+
+      // Yield cards
+      document.getElementById('yieldToday').innerHTML = `${fmt(yieldToday, 2)}<span class="card-unit">kWh</span>`;
+      document.getElementById('yieldYesterday').textContent = `Yesterday: ${fmt(yieldYesterday, 2)} kWh`;
+
+      // Battery
+      if (soc !== null) {
+        document.getElementById('batteryPct').innerHTML = `${fmt(soc, 1)}<span class="card-unit">%</span>`;
+        document.getElementById('batteryBar').style.width = `${soc}%`;
+        const bColor = soc > 50 ? 'var(--battery)' : soc > 20 ? 'var(--solar)' : '#ef4444';
+        document.getElementById('batteryBar').style.background = bColor;
+        document.getElementById('batteryDetail').textContent = battV
+          ? `${fmt(battV, 1)} V · ${battA ? fmt(battA, 1) + ' A' : ''}`
+          : chargeState;
+      }
+
+      // Grid
+      if (gridW !== null) {
+        const isExporting = gridW < 0;
+        document.getElementById('gridPower').innerHTML = `${fmt(Math.abs(gridW), 0)}<span class="card-unit">W</span>`;
+        document.getElementById('gridPower').style.color = isExporting ? 'var(--export)' : 'var(--grid)';
+        document.getElementById('gridSub').textContent = isExporting
+          ? `↑ Exporting · ${fmt(toGridKwh, 2)} kWh total`
+          : `↓ Importing · ${fmt(fromGridKwh, 2)} kWh total`;
+      }
+
+      // Load
+      if (acLoadW !== null) {
+        document.getElementById('totalLoad').innerHTML = `${fmt(acLoadW, 0)}<span class="card-unit">W</span>`;
+        document.getElementById('loadSub').textContent = 'AC consumption';
+      }
+
+      // Flow
+      document.getElementById('flowSolar').textContent = fmt(pvW, 0);
+      document.getElementById('flowBattery').textContent = soc !== null ? fmt(soc, 0) : '—';
+      document.getElementById('flowBatteryW').textContent = battW !== null
+        ? `${fmt(Math.abs(battW), 0)} W ${battW < 0 ? 'charging' : 'discharging'}`
+        : chargeState;
+      document.getElementById('flowLoad').textContent = acLoadW !== null ? fmt(acLoadW, 0) : '—';
+      if (gridW !== null) {
+        const label = gridW < 0
+          ? `↑ ${fmt(Math.abs(gridW), 0)} W export`
+          : `↓ ${fmt(gridW, 0)} W import`;
+        document.getElementById('flowGrid').textContent = label;
+      }
+
+      // Status
+      document.getElementById('statusDot').style.background = 'var(--battery)';
+      document.getElementById('statusText').textContent = 'Live';
+      document.getElementById('lastUpdated').textContent = new Date().toLocaleTimeString('en-GB');
+
+    } catch (e) {
+      console.error('Live fetch error', e);
+      document.getElementById('statusDot').style.background = '#ef4444';
+      document.getElementById('statusText').textContent = 'Offline';
+    }
+  }
+
+  // Tab controls
+  let activeDays = 0;
+  document.getElementById('dayTabs').addEventListener('click', e => {
+    const btn = e.target.closest('.day-tab');
+    if (!btn) return;
+    document.querySelectorAll('.day-tab').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    activeDays = parseInt(btn.dataset.days);
+    fetchStats(activeDays);
+  });
+
+  // Init
+  fetchLive();
+  fetchStats(0);
+
+  // Refresh live data every 30 seconds
+  setInterval(fetchLive, 30_000);
+  // Refresh chart every 15 minutes
+  setInterval(() => fetchStats(activeDays), 900_000);
+</script>
+
+</body>
+</html>

@@ -1,0 +1,887 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Norney Farm Bungalow · Weather</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0d1117;
+      --surface: #161b22;
+      --surface2: #1f2937;
+      --border: #30363d;
+      --text: #e6edf3;
+      --muted: #8b949e;
+      --solar: #f59e0b;
+      --solar-dim: rgba(245,158,11,0.15);
+      --battery: #10b981;
+      --grid: #3b82f6;
+      --load: #a78bfa;
+      --rain: #60a5fa;
+      --rain-dim: rgba(96,165,250,0.15);
+      --sun: #fbbf24;
+      --sun-dim: rgba(251,191,36,0.15);
+      --temp: #f97316;
+      --temp-dim: rgba(249,115,22,0.15);
+      --wx: #38bdf8;   /* weather accent */
+      --wx-dim: rgba(56,189,248,0.15);
+      --radius: 12px;
+    }
+
+    body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+    /* ── Nav ── */
+    nav {
+      position: sticky; top: 0; z-index: 100;
+      background: rgba(13,17,23,0.85); backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      padding: 0 2rem; display: flex; align-items: center; height: 60px; gap: 2rem;
+    }
+    .nav-brand { font-size: 0.95rem; font-weight: 600; display: flex; align-items: center; gap: 0.5rem; color: var(--text); text-decoration: none; }
+    .nav-links { display: flex; gap: 0.25rem; list-style: none; }
+    .nav-links a {
+      display: block; padding: 0.4rem 0.9rem; border-radius: 6px;
+      font-size: 0.875rem; font-weight: 500; color: var(--muted);
+      text-decoration: none; transition: color 0.15s, background 0.15s;
+    }
+    .nav-links a:hover { color: var(--text); background: var(--surface2); }
+    .nav-links a.active { color: var(--wx); background: var(--wx-dim); }
+    .nav-links a.disabled { opacity: 0.4; pointer-events: none; }
+
+    /* ── Layout ── */
+    main { max-width: 1200px; margin: 0 auto; padding: 2.5rem 2rem 4rem; }
+    .page-header { margin-bottom: 2rem; }
+    .page-header h1 { font-size: 1.75rem; font-weight: 700; letter-spacing: -0.02em; }
+    .page-header p { color: var(--muted); font-size: 0.875rem; margin-top: 0.25rem; }
+    .last-updated { font-size: 0.8rem; color: var(--muted); margin-top: 0.5rem; }
+
+    /* ── Hero ── */
+    .hero {
+      background: linear-gradient(135deg, var(--wx-dim) 0%, rgba(56,189,248,0.03) 100%);
+      border: 1px solid rgba(56,189,248,0.25);
+      border-radius: var(--radius); padding: 2rem 2.5rem;
+      margin-bottom: 1.5rem; display: flex; align-items: center;
+      justify-content: space-between; gap: 2rem;
+    }
+    .hero-label { font-size: 0.8rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--wx); margin-bottom: 0.5rem; }
+    .hero-value { font-size: 4rem; font-weight: 700; letter-spacing: -0.03em; line-height: 1; }
+    .hero-value span { font-size: 1.5rem; font-weight: 400; color: var(--muted); margin-left: 0.25rem; }
+    .hero-sub { color: var(--muted); font-size: 0.875rem; margin-top: 0.5rem; }
+    .hero-right { text-align: right; flex-shrink: 0; }
+    .hero-icon { font-size: 5rem; line-height: 1; opacity: 0.7; }
+
+    /* ── Stat cards ── */
+    .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }
+    .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.25rem 1.5rem; transition: border-color 0.2s; }
+    .card:hover { border-color: #484f58; }
+    .card-label { font-size: 0.75rem; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); margin-bottom: 0.75rem; display: flex; align-items: center; gap: 0.4rem; }
+    .card-label .dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+    .card-value { font-size: 2rem; font-weight: 700; letter-spacing: -0.02em; line-height: 1; }
+    .card-unit { font-size: 0.9rem; font-weight: 400; color: var(--muted); margin-left: 0.2rem; }
+    .card-sub { font-size: 0.78rem; color: var(--muted); margin-top: 0.5rem; }
+
+    /* ── Chart sections ── */
+    .chart-section { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.5rem; margin-bottom: 1.5rem; }
+    .chart-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 0.75rem; }
+    .section-title { font-size: 1rem; font-weight: 600; }
+    .section-sub { font-size: 0.78rem; color: var(--muted); margin-top: 0.25rem; }
+    .chart-legend { display: flex; gap: 1rem; flex-wrap: wrap; align-items: center; }
+    .legend-item { display: flex; align-items: center; gap: 0.4rem; font-size: 0.78rem; color: var(--muted); }
+    .legend-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+    .legend-line { width: 16px; height: 2px; border-radius: 1px; flex-shrink: 0; }
+    .chart-container { position: relative; height: 260px; }
+    .chart-container.tall { height: 320px; }
+
+    /* ── Forecast day cards ── */
+    .forecast-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 0.75rem; margin-bottom: 1.5rem; }
+    @media (max-width: 900px) { .forecast-grid { grid-template-columns: repeat(4, 1fr); } }
+    @media (max-width: 560px) { .forecast-grid { grid-template-columns: repeat(2, 1fr); } }
+
+    .fc-card {
+      background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+      padding: 1rem 0.75rem; text-align: center; transition: border-color 0.2s;
+    }
+    .fc-card:hover { border-color: #484f58; }
+    .fc-card.today { border-color: rgba(56,189,248,0.4); background: linear-gradient(135deg, var(--wx-dim), var(--surface)); }
+    .fc-day { font-size: 0.72rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); margin-bottom: 0.5rem; }
+    .fc-day.today-label { color: var(--wx); }
+    .fc-icon { font-size: 2rem; line-height: 1; margin-bottom: 0.5rem; }
+    .fc-desc { font-size: 0.65rem; color: var(--muted); margin-bottom: 0.5rem; min-height: 2em; line-height: 1.3; }
+    .fc-temps { display: flex; justify-content: center; gap: 0.5rem; font-size: 0.85rem; font-weight: 600; margin-bottom: 0.4rem; }
+    .fc-max { color: var(--temp); }
+    .fc-min { color: var(--muted); }
+    .fc-precip { font-size: 0.7rem; color: var(--rain); }
+    .fc-sun { font-size: 0.7rem; color: var(--sun); margin-top: 0.25rem; }
+
+    /* ── History period selector ── */
+    .period-tabs { display: flex; gap: 0.25rem; }
+    .period-tab {
+      background: none; border: 1px solid var(--border); border-radius: 6px;
+      color: var(--muted); cursor: pointer; font-size: 0.78rem; font-weight: 500;
+      padding: 0.3rem 0.7rem; transition: all 0.15s; font-family: inherit;
+    }
+    .period-tab:hover { color: var(--text); border-color: #484f58; }
+    .period-tab.active { background: var(--wx-dim); border-color: rgba(56,189,248,0.4); color: var(--wx); }
+
+    /* ── Skeleton ── */
+    .skeleton { background: linear-gradient(90deg, var(--surface2) 25%, var(--border) 50%, var(--surface2) 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite; border-radius: 4px; display: inline-block; }
+    @keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
+
+    /* ── Error ── */
+    .error-msg { color: #f87171; font-size: 0.85rem; padding: 1rem; text-align: center; }
+
+    /* ── Responsive ── */
+    @media (max-width: 700px) {
+      nav { padding: 0 1rem; }
+      main { padding: 1.5rem 1rem 3rem; }
+      .hero { flex-direction: column; gap: 1rem; }
+      .hero-value { font-size: 3rem; }
+    }
+  </style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-brand">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>
+      <polyline points="9 22 9 12 15 12 15 22"/>
+    </svg>
+    Norney Farm Bungalow
+  </div>
+  <ul class="nav-links">
+    <li><a href="index.html">Home</a></li>
+    <li><a href="solar.html">Solar</a></li>
+    <li><a href="energy.html">Energy</a></li>
+    <li><a href="weather.html" class="active">Weather</a></li>
+    <li><a href="#" class="disabled">History</a></li>
+  </ul>
+</nav>
+
+<main>
+
+  <div class="page-header">
+    <h1>🌤 Weather</h1>
+    <p>GU8 6AE · Norney, Surrey · 51.175°N, 0.617°W</p>
+    <div class="last-updated">Last updated: <span id="lastUpdated">—</span></div>
+  </div>
+
+  <!-- Hero: current conditions -->
+  <div class="hero">
+    <div>
+      <div class="hero-label">Temperature Now</div>
+      <div class="hero-value" id="heroTemp">
+        <span class="skeleton" style="width:120px;height:52px;vertical-align:middle"></span>
+      </div>
+      <div class="hero-sub" id="heroDesc">Loading…</div>
+    </div>
+    <div class="hero-right">
+      <div class="hero-icon" id="heroIcon">—</div>
+    </div>
+  </div>
+
+  <!-- Condition cards -->
+  <div class="cards">
+    <div class="card">
+      <div class="card-label"><div class="dot" style="background:var(--temp)"></div>Feels Like</div>
+      <div class="card-value" id="feelsLike">—<span class="card-unit">°C</span></div>
+      <div class="card-sub" id="todayRange">Today: — / —</div>
+    </div>
+    <div class="card">
+      <div class="card-label"><div class="dot" style="background:var(--rain)"></div>Precipitation</div>
+      <div class="card-value" id="precipitation">—<span class="card-unit">mm</span></div>
+      <div class="card-sub" id="precipProb">Chance today: —%</div>
+    </div>
+    <div class="card">
+      <div class="card-label"><div class="dot" style="background:var(--sun)"></div>Sunshine Today</div>
+      <div class="card-value" id="sunshineHrs">—<span class="card-unit">h</span></div>
+      <div class="card-sub" id="uv">UV index: —</div>
+    </div>
+    <div class="card">
+      <div class="card-label"><div class="dot" style="background:var(--muted)"></div>Wind</div>
+      <div class="card-value" id="windSpeed">—<span class="card-unit">km/h</span></div>
+      <div class="card-sub" id="windDir">—</div>
+    </div>
+    <div class="card">
+      <div class="card-label"><div class="dot" style="background:var(--battery)"></div>Humidity</div>
+      <div class="card-value" id="humidity">—<span class="card-unit">%</span></div>
+      <div class="card-sub" id="dewpoint">Dew point: —°C</div>
+    </div>
+    <div class="card">
+      <div class="card-label"><div class="dot" style="background:var(--load)"></div>Cloud Cover</div>
+      <div class="card-value" id="cloudCover">—<span class="card-unit">%</span></div>
+      <div class="card-sub" id="visibility">Visibility: — km</div>
+    </div>
+  </div>
+
+  <!-- 7-day forecast -->
+  <div class="chart-section">
+    <div class="chart-header">
+      <div>
+        <div class="section-title">7-Day Forecast</div>
+        <div class="section-sub">Daily high / low temperatures, precipitation and sunshine hours.</div>
+      </div>
+    </div>
+    <div class="forecast-grid" id="forecastGrid">
+      <!-- populated by JS -->
+    </div>
+  </div>
+
+  <!-- Hourly chart: next 48h -->
+  <div class="chart-section">
+    <div class="chart-header">
+      <div>
+        <div class="section-title">Next 48 Hours</div>
+        <div class="section-sub">Hourly temperature, precipitation probability and cloud cover.</div>
+      </div>
+      <div class="chart-legend">
+        <div class="legend-item"><div class="legend-line" style="background:var(--temp)"></div>Temperature °C</div>
+        <div class="legend-item"><div class="legend-dot" style="background:rgba(96,165,250,0.8)"></div>Precip probability %</div>
+        <div class="legend-item"><div class="legend-line" style="background:rgba(167,139,250,0.8);border-top:2px dashed rgba(167,139,250,0.8);height:0"></div>Wind km/h</div>
+        <div class="legend-item"><div class="legend-dot" style="background:rgba(148,163,184,0.5)"></div>Cloud cover %</div>
+      </div>
+    </div>
+    <div class="chart-container">
+      <canvas id="hourlyChart"></canvas>
+    </div>
+  </div>
+
+  <!-- Monthly history -->
+  <div class="chart-section">
+    <div class="chart-header">
+      <div>
+        <div class="section-title">Historical Temperature</div>
+        <div class="section-sub">Monthly average max / min temperatures — last 2 years.</div>
+      </div>
+      <div class="period-tabs">
+        <button class="period-tab active" data-period="2">2 Years</button>
+        <button class="period-tab" data-period="1">1 Year</button>
+      </div>
+    </div>
+    <div class="chart-container tall">
+      <canvas id="tempHistChart"></canvas>
+    </div>
+  </div>
+
+  <div class="chart-section">
+    <div class="chart-header">
+      <div>
+        <div class="section-title">Historical Wind</div>
+        <div class="section-sub">Monthly average daily peak and absolute monthly peak wind speed.</div>
+      </div>
+    </div>
+    <div class="chart-container tall">
+      <canvas id="windHistChart"></canvas>
+    </div>
+  </div>
+
+  <div class="chart-section">
+    <div class="chart-header">
+      <div>
+        <div class="section-title">Sunshine &amp; Rainfall History</div>
+        <div class="section-sub">Monthly sunshine hours and total precipitation — useful for understanding solar potential.</div>
+      </div>
+    </div>
+    <div class="chart-legend" style="margin-bottom:1rem">
+      <div class="legend-item"><div class="legend-dot" style="background:var(--sun)"></div>Sunshine hours</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--rain);opacity:0.7"></div>Rainfall mm</div>
+    </div>
+    <div class="chart-container tall">
+      <canvas id="solarRainChart"></canvas>
+    </div>
+  </div>
+
+</main>
+
+<script>
+// ── Constants ──────────────────────────────────────────────────────────────
+const LAT = 51.175;
+const LON = -0.617;
+
+// ── WMO weather code helpers ───────────────────────────────────────────────
+function wmoIcon(code) {
+  if (code === 0)               return '☀️';
+  if (code <= 2)                return '🌤';
+  if (code === 3)               return '☁️';
+  if (code <= 48)               return '🌫';
+  if (code <= 55)               return '🌦';
+  if (code <= 67)               return '🌧';
+  if (code <= 77)               return '🌨';
+  if (code <= 82)               return '🌧';
+  if (code <= 86)               return '🌨';
+  if (code <= 99)               return '⛈';
+  return '🌡';
+}
+
+function wmoDesc(code) {
+  if (code === 0)               return 'Clear sky';
+  if (code === 1)               return 'Mainly clear';
+  if (code === 2)               return 'Partly cloudy';
+  if (code === 3)               return 'Overcast';
+  if (code <= 48)               return 'Fog';
+  if (code <= 55)               return 'Drizzle';
+  if (code <= 67)               return 'Rain';
+  if (code <= 77)               return 'Snow';
+  if (code <= 82)               return 'Rain showers';
+  if (code <= 86)               return 'Snow showers';
+  if (code <= 99)               return 'Thunderstorm';
+  return 'Unknown';
+}
+
+function windDirLabel(deg) {
+  const dirs = ['N','NNE','NE','ENE','E','ESE','SE','SSE','S','SSW','SW','WSW','W','WNW','NW','NNW'];
+  return dirs[Math.round(deg / 22.5) % 16];
+}
+
+// ── Chart defaults ─────────────────────────────────────────────────────────
+const chartDefaults = {
+  responsive: true,
+  maintainAspectRatio: false,
+  animation: { duration: 400 },
+  interaction: { mode: 'index', intersect: false },
+  plugins: {
+    legend: { display: false },
+    tooltip: {
+      backgroundColor: '#1f2937',
+      borderColor: '#30363d',
+      borderWidth: 1,
+      titleColor: '#e6edf3',
+      bodyColor: '#8b949e',
+      padding: 10,
+    }
+  }
+};
+
+// ── Fetch helpers ──────────────────────────────────────────────────────────
+async function fetchForecast() {
+  const url = `https://api.open-meteo.com/v1/forecast?latitude=${LAT}&longitude=${LON}`
+    + `&current=temperature_2m,apparent_temperature,relative_humidity_2m,precipitation,weather_code,cloud_cover,wind_speed_10m,wind_direction_10m,dew_point_2m`
+    + `&hourly=temperature_2m,precipitation_probability,precipitation,weather_code,cloud_cover,wind_speed_10m`
+    + `&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_sum,precipitation_probability_max,sunshine_duration,uv_index_max,wind_speed_10m_max`
+    + `&timezone=Europe%2FLondon&forecast_days=7`;
+  const r = await fetch(url);
+  if (!r.ok) throw new Error(`Forecast API ${r.status}`);
+  return r.json();
+}
+
+async function fetchHistory(years) {
+  const end = new Date();
+  const start = new Date();
+  start.setFullYear(start.getFullYear() - years);
+  const fmt = d => d.toISOString().slice(0, 10);
+  const url = `https://archive-api.open-meteo.com/v1/archive?latitude=${LAT}&longitude=${LON}`
+    + `&start_date=${fmt(start)}&end_date=${fmt(end)}`
+    + `&daily=temperature_2m_max,temperature_2m_min,precipitation_sum,sunshine_duration,wind_speed_10m_max`
+    + `&timezone=Europe%2FLondon`;
+  const r = await fetch(url);
+  if (!r.ok) throw new Error(`Archive API ${r.status}`);
+  return r.json();
+}
+
+// ── Aggregate daily history → monthly ─────────────────────────────────────
+function aggregateMonthly(data) {
+  const months = {};
+  const dates = data.daily.time;
+  const tmax  = data.daily.temperature_2m_max;
+  const tmin  = data.daily.temperature_2m_min;
+  const rain  = data.daily.precipitation_sum;
+  const sun   = data.daily.sunshine_duration; // seconds per day
+
+  dates.forEach((d, i) => {
+    const key = d.slice(0, 7); // YYYY-MM
+    if (!months[key]) months[key] = { tmax: [], tmin: [], rain: 0, sun: 0, frostDays: 0, wind: [], windyDays: 0, n: 0 };
+    const m = months[key];
+    if (tmax[i] !== null) { m.tmax.push(tmax[i]); m.absMax = Math.max(m.absMax ?? -Infinity, tmax[i]); }
+    if (tmin[i] !== null) { m.tmin.push(tmin[i]); if (tmin[i] < 0) m.frostDays++; m.absMin = Math.min(m.absMin ?? Infinity, tmin[i]); }
+    if (rain[i] !== null) m.rain += rain[i];
+    if (sun[i]  !== null) m.sun  += sun[i];
+    const w = data.daily.wind_speed_10m_max[i];
+    if (w !== null) { m.wind.push(w); if (w > 40) m.windyDays++; }
+    m.n++;
+  });
+
+  const keys = Object.keys(months).sort();
+  return keys.map(k => {
+    const m = months[k];
+    const avg = arr => arr.length ? arr.reduce((a, b) => a + b, 0) / arr.length : null;
+    return {
+      label: new Date(k + '-15').toLocaleDateString('en-GB', { month: 'short', year: '2-digit' }),
+      tmaxAvg: avg(m.tmax) !== null ? +avg(m.tmax).toFixed(1) : null,
+      tminAvg: avg(m.tmin) !== null ? +avg(m.tmin).toFixed(1) : null,
+      rain: +m.rain.toFixed(1),
+      sunHrs: +(m.sun / 3600).toFixed(1), // seconds → hours
+      absMax: m.absMax !== undefined ? +m.absMax.toFixed(1) : null,
+      absMin: m.absMin !== undefined ? +m.absMin.toFixed(1) : null,
+      frostDays: m.frostDays,
+      windAvg: m.wind.length ? +(m.wind.reduce((a, b) => a + b, 0) / m.wind.length).toFixed(1) : null,
+      windMax: m.wind.length ? +Math.max(...m.wind).toFixed(1) : null,
+      windyDays: m.windyDays,
+    };
+  });
+}
+
+// ── Chart instances ────────────────────────────────────────────────────────
+let hourlyChart = null, tempHistChart = null, solarRainChart = null, windHistChart = null;
+
+function initHourlyChart(labels, temps, precipProb, wind, cloud) {
+  const ctx = document.getElementById('hourlyChart').getContext('2d');
+  if (hourlyChart) hourlyChart.destroy();
+  hourlyChart = new Chart(ctx, {
+    data: {
+      labels,
+      datasets: [
+        {
+          type: 'line',
+          label: 'Temperature °C',
+          data: temps,
+          borderColor: 'rgba(249,115,22,0.9)',
+          backgroundColor: 'transparent',
+          borderWidth: 2,
+          pointRadius: 0,
+          pointHoverRadius: 4,
+          tension: 0.4,
+          fill: false,
+          yAxisID: 'yTemp',
+          order: 1,
+        },
+        {
+          type: 'line',
+          label: 'Wind km/h',
+          data: wind,
+          borderColor: 'rgba(167,139,250,0.8)',
+          backgroundColor: 'transparent',
+          borderWidth: 2,
+          borderDash: [4, 3],
+          pointRadius: 0,
+          pointHoverRadius: 4,
+          tension: 0.4,
+          fill: false,
+          yAxisID: 'yWind',
+          order: 2,
+        },
+        {
+          type: 'bar',
+          label: 'Precip probability %',
+          data: precipProb,
+          backgroundColor: 'rgba(96,165,250,0.6)',
+          borderWidth: 0,
+          borderRadius: 2,
+          yAxisID: 'yPrecip',
+          order: 3,
+        },
+        {
+          type: 'bar',
+          label: 'Cloud cover %',
+          data: cloud,
+          backgroundColor: 'rgba(148,163,184,0.18)',
+          borderWidth: 0,
+          borderRadius: 2,
+          yAxisID: 'yPrecip',
+          order: 4,
+        }
+      ]
+    },
+    options: {
+      ...chartDefaults,
+      plugins: {
+        ...chartDefaults.plugins,
+        tooltip: {
+          ...chartDefaults.plugins.tooltip,
+          callbacks: {
+            label: item => {
+              if (item.datasetIndex === 0) return ` Temp: ${item.raw}°C`;
+              if (item.datasetIndex === 1) return ` Wind: ${item.raw} km/h`;
+              if (item.datasetIndex === 2) return ` Precip chance: ${item.raw}%`;
+              return ` Cloud cover: ${item.raw}%`;
+            }
+          }
+        }
+      },
+      scales: {
+        x: {
+          grid: { color: 'rgba(48,54,61,0.5)' },
+          ticks: { color: '#8b949e', font: { size: 11 }, maxTicksLimit: 16 },
+        },
+        yTemp: {
+          position: 'left',
+          grid: { color: 'rgba(48,54,61,0.5)' },
+          ticks: { color: '#8b949e', font: { size: 11 }, callback: v => v + '°C' },
+          title: { display: true, text: 'Temperature °C', color: '#8b949e', font: { size: 11 } },
+        },
+        yWind: {
+          position: 'right',
+          min: 0,
+          grid: { drawOnChartArea: false },
+          ticks: { color: '#8b949e', font: { size: 11 }, callback: v => v + ' km/h' },
+          title: { display: true, text: 'Wind km/h', color: '#8b949e', font: { size: 11 } },
+        },
+        yPrecip: {
+          display: false,
+          min: 0, max: 100,
+        }
+      }
+    }
+  });
+}
+
+function initTempHistChart(monthly) {
+  const ctx = document.getElementById('tempHistChart').getContext('2d');
+  if (tempHistChart) tempHistChart.destroy();
+  tempHistChart = new Chart(ctx, {
+    data: {
+      labels: monthly.map(m => m.label),
+      datasets: [
+        {
+          type: 'line',
+          label: 'Monthly max °C',
+          data: monthly.map(m => m.absMax),
+          borderColor: 'rgba(251,146,60,0.9)',
+          backgroundColor: 'transparent',
+          borderWidth: 2,
+          borderDash: [4, 3],
+          pointRadius: 2,
+          pointHoverRadius: 5,
+          tension: 0.3,
+          fill: false,
+          yAxisID: 'yTemp',
+          order: 0,
+        },
+        {
+          type: 'line',
+          label: 'Monthly min °C',
+          data: monthly.map(m => m.absMin),
+          borderColor: 'rgba(147,197,253,0.9)',
+          backgroundColor: 'transparent',
+          borderWidth: 2,
+          borderDash: [4, 3],
+          pointRadius: 2,
+          pointHoverRadius: 5,
+          tension: 0.3,
+          fill: false,
+          yAxisID: 'yTemp',
+          order: 0,
+        },
+        {
+          type: 'bar',
+          label: 'Avg Max °C',
+          data: monthly.map(m => m.tmaxAvg),
+          backgroundColor: 'rgba(249,115,22,0.65)',
+          borderWidth: 0,
+          borderRadius: 3,
+          yAxisID: 'yTemp',
+          order: 2,
+        },
+        {
+          type: 'bar',
+          label: 'Avg Min °C',
+          data: monthly.map(m => m.tminAvg),
+          backgroundColor: 'rgba(96,165,250,0.50)',
+          borderWidth: 0,
+          borderRadius: 3,
+          yAxisID: 'yTemp',
+          order: 2,
+        },
+      ]
+    },
+    options: {
+      ...chartDefaults,
+      plugins: {
+        ...chartDefaults.plugins,
+        legend: { display: true, labels: { color: '#8b949e', font: { size: 11 }, boxWidth: 12, boxHeight: 12 } },
+        tooltip: {
+          ...chartDefaults.plugins.tooltip,
+          callbacks: {
+            label: item => ` ${item.dataset.label}: ${item.raw}°C`
+          }
+        }
+      },
+      scales: {
+        x: { grid: { color: 'rgba(48,54,61,0.5)' }, ticks: { color: '#8b949e', font: { size: 11 }, maxTicksLimit: 24 } },
+        yTemp: {
+          position: 'left',
+          grid: { color: 'rgba(48,54,61,0.5)' },
+          ticks: { color: '#8b949e', font: { size: 11 }, callback: v => v + '°C' },
+          title: { display: true, text: 'Temperature °C', color: '#8b949e', font: { size: 11 } },
+        },
+      }
+    }
+  });
+}
+
+function initSolarRainChart(monthly) {
+  const ctx = document.getElementById('solarRainChart').getContext('2d');
+  if (solarRainChart) solarRainChart.destroy();
+  solarRainChart = new Chart(ctx, {
+    data: {
+      labels: monthly.map(m => m.label),
+      datasets: [
+        {
+          type: 'bar',
+          label: 'Sunshine hours',
+          data: monthly.map(m => m.sunHrs),
+          backgroundColor: 'rgba(251,191,36,0.65)',
+          borderWidth: 0,
+          borderRadius: 3,
+          yAxisID: 'ySun',
+        },
+        {
+          type: 'line',
+          label: 'Rainfall mm',
+          data: monthly.map(m => m.rain),
+          borderColor: 'rgba(96,165,250,0.8)',
+          backgroundColor: 'transparent',
+          borderWidth: 2,
+          pointRadius: 2,
+          pointHoverRadius: 5,
+          tension: 0.4,
+          fill: false,
+          yAxisID: 'yRain',
+        }
+      ]
+    },
+    options: {
+      ...chartDefaults,
+      plugins: {
+        ...chartDefaults.plugins,
+        legend: { display: true, labels: { color: '#8b949e', font: { size: 11 }, boxWidth: 12, boxHeight: 12 } },
+        tooltip: {
+          ...chartDefaults.plugins.tooltip,
+          callbacks: {
+            label: item => {
+              if (item.datasetIndex === 0) return ` Sunshine: ${item.raw} h`;
+              return ` Rainfall: ${item.raw} mm`;
+            }
+          }
+        }
+      },
+      scales: {
+        x: { grid: { color: 'rgba(48,54,61,0.5)' }, ticks: { color: '#8b949e', font: { size: 11 }, maxTicksLimit: 24 } },
+        ySun: {
+          position: 'left',
+          min: 0,
+          grid: { color: 'rgba(48,54,61,0.5)' },
+          ticks: { color: '#8b949e', font: { size: 11 }, callback: v => v + ' h' },
+          title: { display: true, text: 'Sunshine hours', color: '#8b949e', font: { size: 11 } },
+        },
+        yRain: {
+          position: 'right',
+          min: 0,
+          grid: { drawOnChartArea: false },
+          ticks: { color: '#8b949e', font: { size: 11 }, callback: v => v + ' mm' },
+          title: { display: true, text: 'Rainfall mm', color: '#8b949e', font: { size: 11 } },
+        }
+      }
+    }
+  });
+}
+
+function initWindHistChart(monthly) {
+  const ctx = document.getElementById('windHistChart').getContext('2d');
+  if (windHistChart) windHistChart.destroy();
+  windHistChart = new Chart(ctx, {
+    data: {
+      labels: monthly.map(m => m.label),
+      datasets: [
+        {
+          type: 'bar',
+          label: 'Avg daily max km/h',
+          data: monthly.map(m => m.windAvg),
+          backgroundColor: 'rgba(167,139,250,0.55)',
+          borderWidth: 0,
+          borderRadius: 3,
+          yAxisID: 'yWind',
+          order: 2,
+        },
+        {
+          type: 'line',
+          label: 'Monthly peak km/h',
+          data: monthly.map(m => m.windMax),
+          borderColor: 'rgba(167,139,250,1)',
+          backgroundColor: 'transparent',
+          borderWidth: 2,
+          pointRadius: 2,
+          pointHoverRadius: 5,
+          tension: 0.3,
+          fill: false,
+          yAxisID: 'yWind',
+          order: 1,
+        },
+        {
+          type: 'line',
+          label: 'Windy days (>40 km/h)',
+          data: monthly.map(m => m.windyDays),
+          borderColor: 'rgba(251,191,36,0.9)',
+          backgroundColor: 'rgba(251,191,36,0.1)',
+          borderWidth: 2,
+          pointRadius: monthly.map(m => m.windyDays > 0 ? 4 : 0),
+          pointBackgroundColor: 'rgba(251,191,36,0.9)',
+          pointHoverRadius: 6,
+          tension: 0.3,
+          fill: false,
+          yAxisID: 'yWindy',
+          order: 0,
+        }
+      ]
+    },
+    options: {
+      ...chartDefaults,
+      plugins: {
+        ...chartDefaults.plugins,
+        legend: { display: true, labels: { color: '#8b949e', font: { size: 11 }, boxWidth: 12, boxHeight: 12 } },
+        tooltip: {
+          ...chartDefaults.plugins.tooltip,
+          callbacks: {
+            label: item => {
+              if (item.datasetIndex === 2) return ` Windy days: ${item.raw}`;
+              return ` ${item.dataset.label}: ${item.raw} km/h`;
+            }
+          }
+        }
+      },
+      scales: {
+        x: { grid: { color: 'rgba(48,54,61,0.5)' }, ticks: { color: '#8b949e', font: { size: 11 }, maxTicksLimit: 24 } },
+        yWind: {
+          position: 'left',
+          min: 0,
+          grid: { color: 'rgba(48,54,61,0.5)' },
+          ticks: { color: '#8b949e', font: { size: 11 }, callback: v => v + ' km/h' },
+          title: { display: true, text: 'Wind speed km/h', color: '#8b949e', font: { size: 11 } },
+        },
+        yWindy: {
+          position: 'right',
+          min: 0,
+          grid: { drawOnChartArea: false },
+          ticks: {
+            color: 'rgba(251,191,36,0.7)',
+            font: { size: 11 },
+            stepSize: 1,
+            callback: v => Number.isInteger(v) ? v + ' d' : '',
+          },
+          title: { display: true, text: 'Windy days', color: 'rgba(251,191,36,0.7)', font: { size: 11 } },
+        }
+      }
+    }
+  });
+}
+
+// ── Render forecast cards ──────────────────────────────────────────────────
+function renderForecast(daily) {
+  const grid = document.getElementById('forecastGrid');
+  const todayStr = new Date().toISOString().slice(0, 10);
+  grid.innerHTML = daily.time.map((d, i) => {
+    const isToday = d === todayStr;
+    const dayLabel = isToday ? 'Today' : new Date(d + 'T12:00').toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric' });
+    const tmax = daily.temperature_2m_max[i] !== null ? daily.temperature_2m_max[i].toFixed(0) : '—';
+    const tmin = daily.temperature_2m_min[i] !== null ? daily.temperature_2m_min[i].toFixed(0) : '—';
+    const code = daily.weather_code[i];
+    const rain = daily.precipitation_sum[i] !== null ? daily.precipitation_sum[i].toFixed(1) : '0';
+    const prob = daily.precipitation_probability_max[i] || 0;
+    const sunH = daily.sunshine_duration[i] !== null ? (daily.sunshine_duration[i] / 3600).toFixed(1) : '—';
+    return `
+      <div class="fc-card${isToday ? ' today' : ''}">
+        <div class="fc-day${isToday ? ' today-label' : ''}">${dayLabel}</div>
+        <div class="fc-icon">${wmoIcon(code)}</div>
+        <div class="fc-desc">${wmoDesc(code)}</div>
+        <div class="fc-temps"><span class="fc-max">${tmax}°</span><span class="fc-min">${tmin}°</span></div>
+        <div class="fc-precip">${rain} mm · ${prob}%</div>
+        <div class="fc-sun">☀ ${sunH} h</div>
+      </div>`;
+  }).join('');
+}
+
+// ── Populate hero + cards ──────────────────────────────────────────────────
+function renderCurrent(data) {
+  const c = data.current;
+  const d = data.daily;
+
+  // Hero
+  document.getElementById('heroTemp').innerHTML = `${c.temperature_2m.toFixed(1)}<span>°C</span>`;
+  document.getElementById('heroDesc').textContent = `${wmoDesc(c.weather_code)} · ${new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}`;
+  document.getElementById('heroIcon').textContent = wmoIcon(c.weather_code);
+
+  // Cards
+  const sunToday = d.sunshine_duration[0] !== null ? (d.sunshine_duration[0] / 3600).toFixed(1) : '—';
+  document.getElementById('feelsLike').innerHTML = `${c.apparent_temperature.toFixed(1)}<span class="card-unit">°C</span>`;
+  document.getElementById('todayRange').textContent = `Today: ${d.temperature_2m_max[0].toFixed(1)}° / ${d.temperature_2m_min[0].toFixed(1)}°`;
+  document.getElementById('precipitation').innerHTML = `${c.precipitation.toFixed(1)}<span class="card-unit">mm</span>`;
+  document.getElementById('precipProb').textContent = `Chance today: ${d.precipitation_probability_max[0] || 0}%`;
+  document.getElementById('sunshineHrs').innerHTML = `${sunToday}<span class="card-unit">h</span>`;
+  document.getElementById('uv').textContent = `UV index: ${d.uv_index_max ? d.uv_index_max[0] : '—'}`;
+  document.getElementById('windSpeed').innerHTML = `${Math.round(c.wind_speed_10m)}<span class="card-unit">km/h</span>`;
+  document.getElementById('windDir').textContent = `From ${windDirLabel(c.wind_direction_10m)} · max ${Math.round(d.wind_speed_10m_max[0])} km/h today`;
+  document.getElementById('humidity').innerHTML = `${c.relative_humidity_2m}<span class="card-unit">%</span>`;
+  document.getElementById('dewpoint').textContent = `Dew point: ${c.dew_point_2m.toFixed(1)}°C`;
+  document.getElementById('cloudCover').innerHTML = `${c.cloud_cover}<span class="card-unit">%</span>`;
+  document.getElementById('visibility').textContent = 'Visibility: —';  // not in free tier current
+
+  document.getElementById('lastUpdated').textContent = new Date().toLocaleString('en-GB');
+}
+
+// ── History period selector ────────────────────────────────────────────────
+let cachedHistory = {};
+
+async function loadHistory(years) {
+  if (!cachedHistory[years]) {
+    cachedHistory[years] = await fetchHistory(years);
+  }
+  const monthly = aggregateMonthly(cachedHistory[years]);
+  initTempHistChart(monthly);
+  initSolarRainChart(monthly);
+  initWindHistChart(monthly);
+}
+
+document.querySelectorAll('.period-tab').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.period-tab').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    loadHistory(parseInt(btn.dataset.period));
+  });
+});
+
+// ── Main init ──────────────────────────────────────────────────────────────
+async function init() {
+  try {
+    const data = await fetchForecast();
+
+    renderCurrent(data);
+    renderForecast(data.daily);
+
+    // Hourly chart — next 48 slots (48h)
+    const now = new Date();
+    const hrTimes  = data.hourly.time;
+    const hrTemps  = data.hourly.temperature_2m;
+    const hrPrecip = data.hourly.precipitation_probability;
+    const hrWind   = data.hourly.wind_speed_10m;
+    const hrCloud  = data.hourly.cloud_cover;
+
+    const futureIdx = hrTimes.findIndex(t => new Date(t) >= now);
+    const start = Math.max(0, futureIdx - 1);
+    const end   = Math.min(hrTimes.length, start + 49);
+
+    const labels = hrTimes.slice(start, end).map(t =>
+      new Date(t).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit',
+        ...(new Date(t).getDate() !== now.getDate() ? { weekday: 'short' } : {}) })
+    );
+
+    initHourlyChart(labels, hrTemps.slice(start, end), hrPrecip.slice(start, end), hrWind.slice(start, end), hrCloud.slice(start, end));
+
+    // History (default 2 years)
+    await loadHistory(2);
+
+  } catch (err) {
+    console.error(err);
+    document.querySelector('main').insertAdjacentHTML('afterbegin',
+      `<div class="error-msg">Failed to load weather data: ${err.message}</div>`);
+  }
+}
+
+init();
+</script>
+</body>
+</html>
