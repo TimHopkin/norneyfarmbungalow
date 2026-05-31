@@ -451,6 +451,15 @@
         <div class="live-stat-value" id="lsWeather">—</div>
       </div>
     </div>
+    <div class="live-divider"></div>
+    <div class="live-stat">
+      <div class="live-stat-icon">💰</div>
+      <div class="live-stat-body">
+        <div class="live-stat-label">Saved · 30 days</div>
+        <div class="live-stat-value" id="lsSaved" style="color:var(--battery)">—</div>
+        <div style="font-size:0.65rem;color:var(--muted);margin-top:0.2rem">vs. full grid cost</div>
+      </div>
+    </div>
   </div>
 
   <!-- Site map -->
@@ -648,8 +657,73 @@
     } catch(e) { console.warn('Weather fetch failed', e); }
   }
 
+  // ── 30-day savings calculation ───────────────────────────────────────────
+  // Solar generated (kWh) × avg Agile unit rate = what you'd have paid importing it all
+  // Subtract actual grid import cost = net saving from having solar
+  const TARIFF  = 'E-1R-AGILE-24-10-01-H';
+  const PRODUCT = 'AGILE-24-10-01';
+  const MPAN    = '2000016245484';
+  const METER   = '23J0207090';
+
+  async function loadSavings() {
+    try {
+      const now   = new Date();
+      const ago30 = new Date(Date.now() - 30 * 86400000);
+      const fmt   = d => d.toISOString().split('T')[0];
+
+      // 1. Solar yield over 30 days (Pdc watts * 24h / 1000 = kWh per day)
+      const nowTs  = Math.floor(now.getTime() / 1000);
+      const agoTs  = Math.floor(ago30.getTime() / 1000);
+      const statsR = await fetch(`/api/installations/${SITE_ID_HOME}/stats?type=custom&start=${agoTs}&end=${nowTs}&interval=days&attributeCodes[]=Pdc`).then(r => r.json());
+      const pdcPts = statsR.records?.Pdc || [];
+      const solarKwh = pdcPts.reduce((sum, [, v]) => sum + (v != null ? v * 24 / 1000 : 0), 0);
+
+      // 2. Actual grid consumption + unit rates over 30 days
+      const fromISO = ago30.toISOString();
+      const toISO   = now.toISOString();
+      const [consR, ratesR] = await Promise.all([
+        fetch(`/octopus/electricity-meter-points/${MPAN}/meters/${METER}/consumption/?period_from=${fromISO}&period_to=${toISO}&page_size=1500&order_by=period`).then(r => r.json()),
+        fetch(`/octopus/products/${PRODUCT}/electricity-tariffs/${TARIFF}/standard-unit-rates/?period_from=${fromISO}&period_to=${toISO}&page_size=1500&order_by=period_from`).then(r => r.json()),
+      ]);
+
+      // Build rate map: slot start → p/kWh inc VAT
+      const rateMap = {};
+      (ratesR.results || []).forEach(r => { rateMap[r.valid_from] = r.value_inc_vat; });
+
+      // Match consumption to rates
+      let actualCostP = 0;
+      (consR.results || []).forEach(slot => {
+        const kwh  = slot.consumption;
+        const rate = rateMap[slot.interval_start] ?? 28;
+        actualCostP += kwh * rate;
+      });
+
+      // 3. What solar kWh would have cost at avg rate
+      const rates   = Object.values(rateMap);
+      const avgRate = rates.length ? rates.reduce((a, b) => a + b, 0) / rates.length : 28;
+      const solarValueP = solarKwh * avgRate;
+
+      // Saving = value of solar generated minus what was actually paid to grid
+      const savedP = solarValueP - actualCostP;
+      const savedGBP = (savedP / 100).toFixed(0);
+
+      const el = document.getElementById('lsSaved');
+      if (savedP > 0) {
+        el.textContent = `£${savedGBP}`;
+        el.style.color = 'var(--battery)';
+      } else {
+        el.textContent = `£${Math.abs(savedGBP)}`;
+        el.style.color = 'var(--muted)';
+      }
+    } catch(e) {
+      console.warn('Savings fetch failed', e);
+      document.getElementById('lsSaved').textContent = '—';
+    }
+  }
+
   loadLiveSnapshot();
   setInterval(loadLiveSnapshot, 60_000);
+  loadSavings(); // Run once on load — 30-day figure doesn't need frequent refresh
 
   // Define British National Grid (EPSG:27700) projection
   proj4.defs('EPSG:27700', '+proj=tmerc +lat_0=49 +lon_0=-2 +k=0.9996012717 +x_0=400000 +y_0=-100000 +ellps=airy +datum=OSGB36 +units=m +no_defs');
