@@ -523,8 +523,37 @@
 
   <div class="page-header">
     <h1>☀️ Solar Dashboard</h1>
-    <p>SmartSolar MPPT VE.Can 250/100 · Pylontech US2000 · MultiPlus-II 48/5000</p>
+    <p>8 × Aiko 475W panels · Fogstar 15.5 kWh battery · Victron MultiPlus-II 48/5000</p>
     <div class="last-updated">Last updated: <span id="lastUpdated">—</span></div>
+  </div>
+
+  <!-- System spec strip -->
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:1rem;margin-bottom:1.5rem">
+    <div class="card" style="border-color:rgba(245,158,11,0.25)">
+      <div class="card-label"><div class="dot" style="background:var(--solar)"></div>System Size</div>
+      <div class="card-value c-solar" style="font-size:1.6rem">3.8<span class="card-unit">kW</span></div>
+      <div class="card-sub">8 × 475 W panels</div>
+    </div>
+    <div class="card" style="border-color:rgba(16,185,129,0.25)">
+      <div class="card-label"><div class="dot" style="background:var(--battery)"></div>Storage</div>
+      <div class="card-value c-battery" style="font-size:1.6rem">15.5<span class="card-unit">kWh</span></div>
+      <div class="card-sub">Fogstar Energy battery</div>
+    </div>
+    <div class="card">
+      <div class="card-label"><div class="dot" style="background:var(--solar)"></div>Annual Yield</div>
+      <div class="card-value" style="font-size:1.6rem;color:var(--solar)">3,222<span class="card-unit">kWh</span></div>
+      <div class="card-sub">Estimated per year</div>
+    </div>
+    <div class="card">
+      <div class="card-label"><div class="dot" style="background:var(--battery)"></div>Annual Saving</div>
+      <div class="card-value" style="font-size:1.6rem;color:var(--battery)">£960<span class="card-unit"></span></div>
+      <div class="card-sub">Est. electricity bill saving</div>
+    </div>
+    <div class="card">
+      <div class="card-label"><div class="dot" style="background:var(--muted)"></div>System Cost</div>
+      <div class="card-value" style="font-size:1.6rem">£11,785</div>
+      <div class="card-sub">£23,462 lifetime net saving</div>
+    </div>
   </div>
 
   <!-- Hero -->
@@ -673,6 +702,16 @@
   <div class="section-title">Equipment</div>
   <div class="equipment-grid">
     <div class="equipment-card">
+      <div class="equipment-icon" style="background:var(--solar-dim)">☀️</div>
+      <div class="equipment-name">Solar Panels</div>
+      <div class="equipment-model">Aiko Energy AIKO-A475-MCE54Mb</div>
+      <div class="equipment-model" style="margin-top:0.3rem">8 panels · 475 W each · 3.8 kW total</div>
+      <div style="margin-top:0.5rem">
+        <span class="equipment-badge" style="background:rgba(245,158,11,0.12);color:var(--solar)">N-type ABC cells</span>
+        <span class="equipment-badge badge-fw" style="margin-left:0.3rem">25yr warranty</span>
+      </div>
+    </div>
+    <div class="equipment-card">
       <div class="equipment-icon" style="background:var(--solar-dim)">⚡</div>
       <div class="equipment-name">Solar Charger</div>
       <div class="equipment-model">SmartSolar MPPT VE.Can 250/100 rev2</div>
@@ -681,13 +720,15 @@
     <div class="equipment-card">
       <div class="equipment-icon" style="background:var(--battery-dim)">🔋</div>
       <div class="equipment-name">Battery</div>
-      <div class="equipment-model">Pylontech US2000</div>
+      <div class="equipment-model">Fogstar Energy 15.5 kWh</div>
+      <div class="equipment-model" style="margin-top:0.3rem">LiFePO4 · 15 yr warranty</div>
       <div><span class="equipment-badge badge-online">● Online</span></div>
     </div>
     <div class="equipment-card">
       <div class="equipment-icon" style="background:var(--grid-dim)">🔌</div>
-      <div class="equipment-name">Inverter/Charger</div>
-      <div class="equipment-model">MultiPlus-II 48/5000/70-50</div>
+      <div class="equipment-name">Inverter / Charger</div>
+      <div class="equipment-model">Victron MultiPlus-II 48/5000/70-50</div>
+      <div class="equipment-model" style="margin-top:0.3rem">5 kW · bidirectional</div>
       <div><span class="equipment-badge badge-online">● Online</span> <span class="equipment-badge badge-fw">fw 560</span></div>
     </div>
     <div class="equipment-card">
